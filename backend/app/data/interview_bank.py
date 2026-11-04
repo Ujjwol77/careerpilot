@@ -1,0 +1,70 @@
+"""Question bank: (question, expected keywords used for scoring)."""
+
+SKILL_QUESTIONS: dict[str, list[tuple[str, list[str]]]] = {
+    "sql": [("Explain the difference between INNER JOIN and LEFT JOIN and when you would use each.",
+             ["join", "rows", "null", "match", "left", "inner"])],
+    "python": [("How would you clean a CSV with missing values and duplicates in Python?",
+                ["pandas", "missing", "duplicates", "dropna", "fillna", "validate"])],
+    "excel": [("How do you summarise a large sales sheet by region and month in Excel?",
+               ["pivot", "table", "group", "sum", "filter", "chart"])],
+    "power_bi": [("What is the difference between a measure and a calculated column in Power BI?",
+                  ["measure", "column", "dax", "row", "context", "aggregate"])],
+    "statistics": [("A p-value is 0.03. What does that tell you, and what does it not tell you?",
+                    ["null", "hypothesis", "probability", "significance", "effect", "sample"])],
+    "data_viz": [("How do you choose between a bar chart, line chart and scatter plot?",
+                  ["trend", "comparison", "categories", "relationship", "audience", "time"])],
+    "git": [("Walk me through how you resolve a merge conflict.",
+             ["conflict", "merge", "branch", "pull", "commit", "review"])],
+    "docker": [("What is the difference between a Docker image and a container?",
+                ["image", "container", "layer", "run", "dockerfile", "instance"])],
+    "linux": [("How would you find which process is using the most CPU on a Linux server?",
+               ["top", "ps", "cpu", "process", "kill", "monitor"])],
+    "siem": [("An alert shows 50 failed logins followed by one success from a new country. What do you do?",
+              ["investigate", "logs", "account", "mfa", "reset", "escalate", "ip"])],
+    "network_security": [("What is the difference between a stateful and stateless firewall?",
+                          ["state", "connection", "packet", "rules", "track", "session"])],
+    "incident_response": [("Describe the phases of incident response and what happens in each.",
+                           ["preparation", "identification", "containment", "eradication", "recovery", "lessons"])],
+    "vuln_assessment": [("How do you prioritise 200 vulnerabilities from a scan?",
+                         ["severity", "cvss", "exploit", "asset", "risk", "patch", "business"])],
+    "rest_apis": [("What makes an API RESTful? Which status codes would you return for create, not found and invalid input?",
+                   ["resource", "http", "201", "404", "400", "stateless", "verbs"])],
+    "unit_testing": [("What makes a good unit test, and what should you mock?",
+                      ["isolated", "fast", "assert", "mock", "dependency", "deterministic"])],
+    "react": [("When does a React component re-render and how can you avoid unnecessary renders?",
+               ["state", "props", "render", "memo", "key", "hooks"])],
+    "javascript": [("Explain closures in JavaScript with a practical example.",
+                    ["function", "scope", "variable", "closure", "lexical", "example"])],
+    "typescript": [("What problems do TypeScript types solve compared with plain JavaScript?",
+                    ["type", "compile", "errors", "interface", "refactor", "safety"])],
+    "cicd": [("What should a CI pipeline do on every pull request?",
+              ["test", "build", "lint", "automate", "merge", "feedback"])],
+    "aws": [("When would you choose object storage over a block volume on AWS?",
+             ["s3", "object", "durable", "cost", "ebs", "access"])],
+    "agile": [("What happens in a sprint retrospective and why does it matter?",
+               ["team", "improve", "went well", "action", "sprint", "feedback"])],
+}
+
+ROLE_QUESTIONS: dict[str, list[tuple[str, list[str]]]] = {
+    "data_analyst": [
+        ("Tell me about an analysis that changed a decision. What was the data and the outcome?", ["data", "insight", "decision", "result", "stakeholder"]),
+        ("How do you check a dataset is trustworthy before analysing it?", ["missing", "outliers", "duplicates", "validate", "source", "quality"]),
+    ],
+    "cybersecurity_analyst": [
+        ("How would you explain a phishing risk to non-technical staff?", ["phishing", "report", "links", "training", "simple", "example"]),
+        ("What is the principle of least privilege and where have you applied it?", ["least", "access", "permissions", "role", "need", "reduce"]),
+    ],
+    "software_developer": [
+        ("How do you decide when code is ready for review?", ["tests", "readable", "scope", "description", "lint", "review"]),
+        ("Describe how you would debug a bug that only happens in production.", ["logs", "reproduce", "monitor", "hypothesis", "rollback", "metrics"]),
+    ],
+}
+
+BEHAVIOURAL = [
+    "Tell me about a time you had to learn something quickly to finish a task.",
+    "Describe a disagreement with a teammate and how you resolved it.",
+    "Give an example of a mistake you made at work or study and what you did next.",
+    "Tell me about a time you managed several deadlines at once.",
+    "Describe a time you explained something technical to someone non-technical.",
+    "Tell me about a project you are proud of and your specific contribution.",
+]
