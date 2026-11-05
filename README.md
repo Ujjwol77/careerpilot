@@ -36,9 +36,10 @@ Agile/Scrum plans, UML diagrams and UI/UX design are written deliverables for yo
 - **LLM:** set `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint).
 - **Database:** set `DATABASE_URL` to a Postgres/Supabase URL. For pgvector, replace `embeddings.py` with hosted embeddings.
 - **Jobs:** implement the `JobSource` interface in `job_search_agent.py` for a live API.
+- **Learning links:** `backend/app/data/learning.py` maps every skill to specific course pages (Kaggle Learn, Microsoft Learn, TryHackMe, Cisco NetAcad, Professor Messer, PortSwigger and others). Re-check them with `cd backend && python -m app.check_links`.
 - **Before deploying:** set a long random `SECRET_KEY` and set `CORS_ORIGINS`.
 
 ## Known limitations
 - Default AI output is rule-based templates, not a language model. The real-LLM path is only tested with a mocked transport.
-- Jobs are a synthetic 45-posting dataset with fictional companies; learning links are search queries, not curated courses.
+- Jobs are a synthetic 45-posting dataset with fictional companies. Learning links go to specific course pages, but the catalogue is hand-curated (no course API yet), and most study hours are estimates; durations published by the provider are flagged `hours_source: provider`.
 - Processing is synchronous; the JWT is kept in localStorage (use httpOnly cookies in production); no rate limiting or email verification.
