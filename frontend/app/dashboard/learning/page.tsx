@@ -29,8 +29,8 @@ export default function LearningPage() {
                 {w.items.map((it: any) => (
                   <div key={it.skill + it.title} className="small">
                     <Pill tone={it.priority === "high" ? "bad" : it.priority === "medium" ? "warn" : "neutral"}>{it.type}</Pill>
-                    {it.title} <span className="muted">({it.hours}h total, weeks {it.start_week}–{it.end_week})</span>{" "}
-                    <a href={`https://www.google.com/search?q=${encodeURIComponent(it.search)}`} target="_blank" rel="noreferrer">Find resources</a>
+                    <a href={it.url} target="_blank" rel="noopener noreferrer"><strong>{it.title}</strong></a>{" "}
+                    <span className="muted">· {it.provider} · {it.cost} · {it.hours_source === "provider" ? "" : "~"}{it.hours}h · weeks {it.start_week}–{it.end_week}</span>
                   </div>
                 ))}
               </div>

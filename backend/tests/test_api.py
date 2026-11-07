@@ -244,3 +244,25 @@ def test_llm_failure_falls_back(monkeypatch):
     fake = llm.OpenAICompatLLM("key", "https://example.test/v1", "m", transport=httpx.MockTransport(lambda r: httpx.Response(500)))
     monkeypatch.setattr(llm, "get_llm", lambda: fake)
     assert llm.try_llm("report_summary.v1", "fallback text", facts="x") == ("fallback text", "template-fallback")
+
+
+def test_every_skill_has_direct_learning_links():
+    from urllib.parse import urlparse
+    from app.data.learning import resources_for
+    from app.taxonomy import SKILLS
+    for slug in SKILLS:
+        res = resources_for(slug)
+        assert res, slug
+        for r in res:
+            u = urlparse(r["url"])
+            assert u.scheme == "https" and u.netloc, (slug, r["url"])
+            assert not u.path.startswith("/search") and "q=" not in u.query, (slug, r["url"])  # no web searches
+            assert r["provider"] and r["hours"] > 0
+
+
+def test_learning_plan_items_link_to_course_pages(client, uploaded):
+    headers, _ = uploaded
+    plan = client.get(f"{API}/learning", headers=headers).json()
+    urls = [i["url"] for i in plan["items"]]
+    assert urls and all(u.startswith("https://") for u in urls)
+    assert len(urls) == len(set(urls))  # shared courses are scheduled once

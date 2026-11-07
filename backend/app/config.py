@@ -1,6 +1,12 @@
 """Runtime settings, read from environment variables (see .env.example)."""
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load backend/.env into the environment. Real environment variables (e.g. on a host) win.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
 
 
 def _split(value: str) -> tuple[str, ...]:
