@@ -103,7 +103,13 @@ export default function ProfilePage() {
             <p>{p.summary}</p>
             <div className="grid grid-3">
               <div><strong>{p.years_experience}</strong><p className="muted small">years of experience</p></div>
-              <div><strong>{p.inferred_roles.length ? p.inferred_roles.join(", ").replaceAll("_", " ") : "-"}</strong><p className="muted small">roles that fit</p></div>
+              <div><strong>{(() => {
+                const top = (p.inferred_roles as ({ label?: string; role?: string; score?: number } | string)[])
+                  .map((r) => typeof r === "string" ? { label: r.replaceAll("_", " "), score: undefined } : { label: r.label ?? r.role?.replaceAll("_", " ") ?? "", score: r.score })
+                  .filter((r) => r.label && (r.score === undefined || r.score > 0))
+                  .slice(0, 3);
+                return top.length ? top.map((r) => r.score === undefined ? r.label : `${r.label} (${r.score}%)`).join(", ") : "-";
+              })()}</strong><p className="muted small">roles that fit</p></div>
               <div><strong>{p.skills.length}</strong><p className="muted small">skills detected</p></div>
             </div>
             <h3>Skills</h3>
