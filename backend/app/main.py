@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select, text
 
 from .config import settings
 from .data.seed_jobs import build_seed_jobs
@@ -20,9 +20,24 @@ def seed_jobs() -> None:
             db.commit()
 
 
+def add_missing_columns() -> None:
+    """create_all() never alters existing tables, so add columns introduced after a DB was created."""
+    new_cols = {"jobs": {"url": "VARCHAR(500) DEFAULT ''", "external_id": "VARCHAR(80) DEFAULT ''"}}
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table, cols in new_cols.items():
+            if not insp.has_table(table):
+                continue
+            have = {c["name"] for c in insp.get_columns(table)}
+            for name, ddl in cols.items():
+                if name not in have:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(engine)
+    add_missing_columns()
     seed_jobs()
     yield
 

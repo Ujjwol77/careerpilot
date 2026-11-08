@@ -266,3 +266,65 @@ def test_learning_plan_items_link_to_course_pages(client, uploaded):
     urls = [i["url"] for i in plan["items"]]
     assert urls and all(u.startswith("https://") for u in urls)
     assert len(urls) == len(set(urls))  # shared courses are scheduled once
+
+
+# ---------- live jobs (Adzuna) with a fake server ----------
+def _fake_adzuna(calls):
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json={"results": [
+            {"id": "a1", "title": "Junior <strong>Data Analyst</strong>", "company": {"display_name": "Acme"},
+             "location": {"display_name": "Melbourne, Victoria"}, "description": "Use SQL, Power BI and Excel daily.",
+             "salary_min": 70000, "salary_max": 85000, "redirect_url": "https://www.adzuna.com.au/details/a1"},
+            {"id": "a2", "title": "Senior Data Analyst", "company": {"display_name": "Beta"},
+             "location": {"display_name": "Melbourne, Victoria"}, "description": "Python, statistics, stakeholder management.",
+             "redirect_url": "https://www.adzuna.com.au/details/a2"},
+            {"id": "a3", "title": "Data Analyst", "company": {}, "location": {"display_name": "Melbourne CBD"},
+             "description": "Tableau dashboards", "redirect_url": "https://www.adzuna.com.au/details/a3"},
+        ]})
+    return handler
+
+
+def test_adzuna_source_saves_and_caches(client, monkeypatch):
+    import app.agents.job_search_agent as js
+    from app.config import settings
+    from app.db import SessionLocal
+    object.__setattr__(settings, "adzuna_app_id", "id"); object.__setattr__(settings, "adzuna_app_key", "key")
+    calls = []
+    source = js.AdzunaSource(transport=httpx.MockTransport(_fake_adzuna(calls)))
+    monkeypatch.setattr(js, "SOURCES", [source, js.SeedDatasetSource()])
+    try:
+        with SessionLocal() as db:
+            jobs = js.search_jobs(db, role_categories=["data_analyst"], location="Melbourne")
+            assert {j.source for j in jobs} == {"adzuna"} and len(jobs) == 3  # live results, no sample jobs
+            junior = next(j for j in jobs if j.external_id == "a1")
+            assert junior.title == "Junior Data Analyst" and junior.level == "junior"
+            assert {"sql", "power_bi", "excel"} <= set(junior.skills) and junior.url.startswith("https://")
+            assert next(j for j in jobs if j.external_id == "a2").level == "senior"
+            assert calls[0].url.params["what"] == "Data Analyst" and calls[0].url.params["where"] == "Melbourne"
+            js.search_jobs(db, role_categories=["data_analyst"], location="Melbourne")
+            assert len(calls) == 1  # second search served from the cache, no extra API call
+    finally:
+        object.__setattr__(settings, "adzuna_app_id", ""); object.__setattr__(settings, "adzuna_app_key", "")
+
+
+def test_adzuna_failure_falls_back_to_sample_jobs(client, monkeypatch):
+    import app.agents.job_search_agent as js
+    from app.config import settings
+    from app.db import SessionLocal
+    object.__setattr__(settings, "adzuna_app_id", "id"); object.__setattr__(settings, "adzuna_app_key", "key")
+    source = js.AdzunaSource(transport=httpx.MockTransport(lambda r: httpx.Response(401)))
+    monkeypatch.setattr(js, "SOURCES", [source, js.SeedDatasetSource()])
+    try:
+        with SessionLocal() as db:
+            jobs = js.search_jobs(db, role_categories=["software_developer"])
+            assert jobs and all(j.source == "seed-dataset" for j in jobs)
+    finally:
+        object.__setattr__(settings, "adzuna_app_id", ""); object.__setattr__(settings, "adzuna_app_key", "")
+
+
+def test_no_adzuna_key_uses_sample_jobs(client):
+    from app.agents.job_search_agent import search_jobs
+    from app.db import SessionLocal
+    with SessionLocal() as db:
+        assert all(j.source == "seed-dataset" for j in search_jobs(db))

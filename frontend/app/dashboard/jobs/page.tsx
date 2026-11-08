@@ -69,12 +69,13 @@ function Matches() {
           </Card>
           <Card title={`${data.count} matches`}>
             {data.count === 0 && <p className="muted">No postings matched. Loosen your preferences and try again.</p>}
+            {data.count > 0 && <SourceNote items={data.matches} />}
             {data.matches.map((m: any) => (
               <div className="job" key={m.job_id}>
                 <ScoreRing value={m.score} label={`Match score for ${m.title}`} />
                 <div className="job-body">
                   <div className="spread">
-                    <div><strong>{m.title}</strong><div className="muted small">{m.company} · {m.location} · {money(m.salary_min)}–{money(m.salary_max)}</div></div>
+                    <div><strong>{m.title}</strong><div className="muted small">{m.company} · {m.location} · {salaryText(m.salary_min, m.salary_max)}</div><PostingLink url={m.url} source={m.source} /></div>
                     <Track jobId={m.job_id} />
                   </div>
                   <Pill tone={bandTone(m.readiness)}>{bandLabel(m.readiness)}</Pill>
@@ -128,12 +129,12 @@ function Search() {
       <ErrorBox error={error} />
       {loading ? <Loading /> : (
         <Card title={`${data?.count ?? 0} postings`}>
-          <p className="muted small">Postings come from a synthetic seed dataset with fictional companies. Real job APIs plug in through the JobSource interface.</p>
+          <SourceNote items={data?.jobs ?? []} />
           {data?.jobs.map((j) => (
             <div className="job" key={j.id}>
               <div className="job-body">
                 <div className="spread">
-                  <div><strong>{j.title}</strong><div className="muted small">{j.company} · {j.location} · {j.level} · {money(j.salary_min)}–{money(j.salary_max)}</div></div>
+                  <div><strong>{j.title}</strong><div className="muted small">{j.company} · {j.location} · {j.level} · {salaryText(j.salary_min, j.salary_max)}</div><PostingLink url={j.url} source={j.source} /></div>
                   <Track jobId={j.id} />
                 </div>
                 <p className="small">{j.description}</p>
@@ -143,5 +144,32 @@ function Search() {
         </Card>
       )}
     </>
+  );
+}
+
+function salaryText(min: number, max: number) {
+  if (!min && !max) return "Salary not listed";
+  if (!max || min === max) return money(min || max);
+  return `${money(min)}–${money(max)}`;
+}
+
+function PostingLink({ url, source }: { url?: string; source?: string }) {
+  if (!url) return null;
+  return (
+    <a className="small" href={url} target="_blank" rel="noopener noreferrer">
+      View and apply{source === "adzuna" ? " on Adzuna" : ""}
+    </a>
+  );
+}
+
+/** Adzuna's terms ask apps to credit them wherever their listings are shown. */
+function SourceNote({ items }: { items: { source?: string }[] }) {
+  const live = items.some((i) => i.source === "adzuna");
+  return live ? (
+    <p className="muted small">
+      Live postings: <a href="https://www.adzuna.com.au" target="_blank" rel="noopener noreferrer">Jobs by Adzuna</a>
+    </p>
+  ) : (
+    <p className="muted small">Showing sample postings (fictional companies). Add an Adzuna key in backend/.env for live Australian jobs.</p>
   );
 }

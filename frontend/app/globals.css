@@ -3,12 +3,21 @@
   --brand: #0f766e; --brand-soft: #e0f2f1; --brand-ink: #ffffff; --nav: #12202f; --nav-ink: #cfd8e3;
   --good: #067647; --good-bg: #e7f6ee; --warn: #b54708; --warn-bg: #fff3e0; --bad: #b42318; --bad-bg: #fdecea;
   --radius: 12px;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Theme: data-theme="light" | "dark" on <html> forces a theme; no attribute = follow the OS. */
+:root[data-theme="dark"] {
     --bg: #0e1520; --card: #162130; --ink: #e8edf4; --muted: #9aa8bd; --line: #26364a;
     --brand: #2dd4bf; --brand-soft: #12332f; --brand-ink: #06231f; --nav: #0a111a; --nav-ink: #a9b6c8;
     --good: #4ade80; --good-bg: #123023; --warn: #fbbf24; --warn-bg: #36280d; --bad: #f87171; --bad-bg: #3a1a1a;
+    color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1520; --card: #162130; --ink: #e8edf4; --muted: #9aa8bd; --line: #26364a;
+    --brand: #2dd4bf; --brand-soft: #12332f; --brand-ink: #06231f; --nav: #0a111a; --nav-ink: #a9b6c8;
+    --good: #4ade80; --good-bg: #123023; --warn: #fbbf24; --warn-bg: #36280d; --bad: #f87171; --bad-bg: #3a1a1a;
+    color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
@@ -110,3 +119,13 @@ pre { white-space: pre-wrap; background: var(--bg); padding: 10px; border-radius
   .card { break-inside: avoid; border-color: #ccc; }
   :root { --bg: #fff; --card: #fff; --ink: #000; }
 }
+
+/* theme toggle */
+.theme-toggle { display: inline-flex; border: 1px solid currentColor; border-radius: 9px; padding: 2px; gap: 2px; opacity: .9; }
+.theme-toggle button { background: transparent; color: inherit; border: 0; border-radius: 7px; padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.theme-toggle button:hover { background: rgba(127,127,127,.15); }
+.theme-toggle button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); font-weight: 600; }
+.sidebar-theme { margin-top: 10px; display: flex; width: fit-content; }
+.auth-wrap { position: relative; }
+.auth-theme { position: absolute; top: 16px; right: 16px; color: var(--ink); }
+@media print { .theme-toggle { display: none; } }

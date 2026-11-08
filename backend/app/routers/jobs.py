@@ -13,7 +13,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 def _job_out(j: Job) -> dict:
     return {"id": j.id, "title": j.title, "company": j.company, "location": j.location, "level": j.level,
             "role_category": j.role_category, "salary_min": j.salary_min, "salary_max": j.salary_max,
-            "description": j.description, "source": j.source}
+            "description": j.description, "source": j.source, "url": j.url or ""}
 
 
 @router.get("/search")

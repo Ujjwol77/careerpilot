@@ -29,6 +29,13 @@ class Settings:
     llm_base_url: str = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
     llm_model: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
+    # Live jobs from Adzuna (free key: https://developer.adzuna.com). Blank = sample jobs only.
+    adzuna_app_id: str = os.getenv("ADZUNA_APP_ID", "")
+    adzuna_app_key: str = os.getenv("ADZUNA_APP_KEY", "")
+    adzuna_country: str = os.getenv("ADZUNA_COUNTRY", "au")
+    adzuna_results: int = int(os.getenv("ADZUNA_RESULTS", "30"))
+    jobs_cache_hours: int = int(os.getenv("JOBS_CACHE_HOURS", "12"))
+
     cors_origins: tuple[str, ...] = field(
         default_factory=lambda: _split(os.getenv("CORS_ORIGINS", "http://localhost:3000"))
     )

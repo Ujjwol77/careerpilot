@@ -5,6 +5,8 @@ from pathlib import Path
 _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["LLM_PROVIDER"] = "mock"
+os.environ["ADZUNA_APP_ID"] = ""   # tests use the sample jobs; a developer's .env key is ignored
+os.environ["ADZUNA_APP_KEY"] = ""
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

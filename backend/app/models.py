@@ -76,6 +76,17 @@ class Job(Base):
     skills: Mapped[list] = mapped_column(JSON, default=list)  # taxonomy slugs
     source: Mapped[str] = mapped_column(String(60), default="seed-dataset")
     embedding: Mapped[list] = mapped_column(JSON, default=list)
+    url: Mapped[str] = mapped_column(String(500), default="")          # apply link for live postings
+    external_id: Mapped[str] = mapped_column(String(80), default="", index=True)  # provider's job id
+
+
+class JobQueryCache(Base):
+    """Remembers when a live search last ran, so repeat searches reuse saved jobs instead of the API."""
+    __tablename__ = "job_query_cache"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(200), unique=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    result_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Application(Base):

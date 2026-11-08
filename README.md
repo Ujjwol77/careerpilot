@@ -35,11 +35,11 @@ Agile/Scrum plans, UML diagrams and UI/UX design are written deliverables for yo
 ## Swapping the mock parts
 - **LLM:** set `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint).
 - **Database:** set `DATABASE_URL` to a Postgres/Supabase URL. For pgvector, replace `embeddings.py` with hosted embeddings.
-- **Jobs:** implement the `JobSource` interface in `job_search_agent.py` for a live API.
+- **Jobs:** live Australian postings come from the Adzuna API. Get a free key at https://developer.adzuna.com, set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` in `backend/.env`, and check it with `cd backend && python -m app.check_jobs "data analyst" Melbourne`. Searches are cached for 12 hours (`JOBS_CACHE_HOURS`). Without a key, or if the API fails, the 45 sample postings are used. Other APIs plug in through the `JobSource` interface in `job_search_agent.py`.
 - **Learning links:** `backend/app/data/learning.py` maps every skill to specific course pages (Kaggle Learn, Microsoft Learn, TryHackMe, Cisco NetAcad, Professor Messer, PortSwigger and others). Re-check them with `cd backend && python -m app.check_links`.
 - **Before deploying:** set a long random `SECRET_KEY` and set `CORS_ORIGINS`.
 
 ## Known limitations
 - Default AI output is rule-based templates, not a language model. The real-LLM path is only tested with a mocked transport.
-- Jobs are a synthetic 45-posting dataset with fictional companies. Learning links go to specific course pages, but the catalogue is hand-curated (no course API yet), and most study hours are estimates; durations published by the provider are flagged `hours_source: provider`.
+- Live jobs need an Adzuna key; without one the app uses a synthetic 45-posting dataset with fictional companies. Adzuna returns only a description snippet, so skills found in live postings can be incomplete. Learning links go to specific course pages, but the catalogue is hand-curated (no course API yet), and most study hours are estimates; durations published by the provider are flagged `hours_source: provider`.
 - Processing is synchronous; the JWT is kept in localStorage (use httpOnly cookies in production); no rate limiting or email verification.
