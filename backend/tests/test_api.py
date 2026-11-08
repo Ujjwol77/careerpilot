@@ -183,6 +183,11 @@ def test_full_report_and_ops(client, uploaded):
     agents = [t["agent"] for t in rep["agent_trace"]]
     assert agents == ["profile_understanding", "job_search", "job_matching", "skill_gap", "cv_optimisation", "learning_pathway", "interview_coach", "report"]
     assert all(t["status"] == "ok" for t in rep["agent_trace"])
+    sources = {t["agent"]: t["llm_source"] for t in rep["agent_trace"]}
+    assert sources["job_matching"] == "rules" and sources["skill_gap"] == "rules"  # calculations are not "template"
+    assert sources["cv_optimisation"] == "template"  # LLM-capable agent in mock mode
+    assert sources["job_search"] == "sample-data"  # no Adzuna key in tests
+    assert "Adzuna off" in next(t["note"] for t in rep["agent_trace"] if t["agent"] == "job_search")
     assert rep["readiness_band"] in {"HIGHLY_QUALIFIED", "QUALIFIED_WITH_GAPS", "DEVELOPMENT_REQUIRED"}
     assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["weeks"] and rep["interview"]["schedule"]
     assert client.get(f"{API}/report/latest", headers=headers).json()["generated_at"] == rep["generated_at"]
@@ -302,8 +307,12 @@ def test_adzuna_source_saves_and_caches(client, monkeypatch):
             assert {"sql", "power_bi", "excel"} <= set(junior.skills) and junior.url.startswith("https://")
             assert next(j for j in jobs if j.external_id == "a2").level == "senior"
             assert calls[0].url.params["what"] == "Data Analyst" and calls[0].url.params["where"] == "Melbourne"
+            engine, note = js.describe_sources(jobs)
+            assert engine == "adzuna" and note.startswith("3 Adzuna + 0 sample") and "1 API call" in note
+            js.reset_source_status()
             js.search_jobs(db, role_categories=["data_analyst"], location="Melbourne")
             assert len(calls) == 1  # second search served from the cache, no extra API call
+            assert "1 cached search" in js.describe_sources(jobs)[1]
     finally:
         object.__setattr__(settings, "adzuna_app_id", ""); object.__setattr__(settings, "adzuna_app_key", "")
 
@@ -319,6 +328,8 @@ def test_adzuna_failure_falls_back_to_sample_jobs(client, monkeypatch):
         with SessionLocal() as db:
             jobs = js.search_jobs(db, role_categories=["software_developer"])
             assert jobs and all(j.source == "seed-dataset" for j in jobs)
+            engine, note = js.describe_sources(jobs)
+            assert engine == "sample-data" and "Adzuna failed (HTTP 401)" in note
     finally:
         object.__setattr__(settings, "adzuna_app_id", ""); object.__setattr__(settings, "adzuna_app_key", "")
 
@@ -328,3 +339,91 @@ def test_no_adzuna_key_uses_sample_jobs(client):
     from app.db import SessionLocal
     with SessionLocal() as db:
         assert all(j.source == "seed-dataset" for j in search_jobs(db))
+
+
+# ---------- live learning sources with fake servers ----------
+FAKE_MSLEARN = {"learningPaths": [
+    {"uid": "lp1", "title": "Get started with Microsoft Power BI", "url": "https://learn.microsoft.com/en-us/training/paths/get-started-power-bi/?WT.mc_id=api",
+     "duration_in_minutes": 180, "levels": ["beginner"], "products": ["power-bi"], "subjects": ["data-analytics"], "popularity": 0.9}],
+  "modules": [
+    {"uid": "m1", "title": "Explore Azure SQL Database", "url": "https://learn.microsoft.com/en-us/training/modules/azure-sql/",
+     "duration_in_minutes": 45, "levels": ["intermediate"], "products": ["azure-sql-database"], "subjects": [], "popularity": 0.5},
+    {"uid": "m2", "title": "Teamwork in Microsoft Teams", "url": "https://learn.microsoft.com/en-us/training/modules/teams/",
+     "duration_in_minutes": 30, "levels": ["beginner"], "products": [], "subjects": [], "popularity": 0.9}]}
+
+
+def _fake_youtube(calls):
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith("/search"):
+            return httpx.Response(200, json={"items": [{"id": {"videoId": "short1"}}, {"id": {"videoId": "long1"}}, {"id": {"videoId": "long2"}}]})
+        return httpx.Response(200, json={"items": [
+            {"id": "short1", "snippet": {"title": "SIEM in 60 seconds", "channelTitle": "A"}, "contentDetails": {"duration": "PT1M"}, "statistics": {"viewCount": "999999"}},
+            {"id": "long1", "snippet": {"title": "SIEM Full Course for Beginners", "channelTitle": "Sec Academy"}, "contentDetails": {"duration": "PT2H30M"}, "statistics": {"viewCount": "50000"}},
+            {"id": "long2", "snippet": {"title": "Cyber career talk", "channelTitle": "B"}, "contentDetails": {"duration": "PT1H"}, "statistics": {"viewCount": "900000"}},
+        ]})
+    return handler
+
+
+@pytest.fixture
+def live_learning(tmp_path, monkeypatch):
+    import app.learning_sources as ls
+    from app.config import settings
+    monkeypatch.setattr(ls, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(ls, "_SKILL_CACHE_FILE", tmp_path / "learning_cache.json")
+    monkeypatch.setattr(ls.MicrosoftLearnSource, "_CATALOG_FILE", tmp_path / "mslearn.json")
+    monkeypatch.setattr(ls, "skill_cache", ls._SkillCache())
+    yt_calls = []
+    ms = ls.MicrosoftLearnSource(transport=httpx.MockTransport(lambda r: httpx.Response(200, json=FAKE_MSLEARN)))
+    yt = ls.YouTubeSource(transport=httpx.MockTransport(_fake_youtube(yt_calls)))
+    monkeypatch.setattr(ls, "LIVE_SOURCES", [ms, yt])
+    object.__setattr__(settings, "learning_mslearn", True); object.__setattr__(settings, "youtube_api_key", "k")
+    yield ls, yt_calls
+    object.__setattr__(settings, "learning_mslearn", False); object.__setattr__(settings, "youtube_api_key", "")
+
+
+def test_mslearn_matches_skill_in_title_and_uses_real_duration(live_learning):
+    ls, _ = live_learning
+    ms = ls.LIVE_SOURCES[0]
+    pbi = ms.find("power_bi")
+    assert pbi[0]["url"] == "https://learn.microsoft.com/en-us/training/paths/get-started-power-bi/"  # tracking query removed
+    assert pbi[0]["hours"] == 3 and pbi[0]["hours_source"] == "provider"
+    assert ms.find("sql")[0]["title"] == "Explore Azure SQL Database"
+    assert ms.find("teamwork") == []  # soft skills are not searched on Microsoft Learn
+    assert ms.find("siem") == []      # no title match -> nothing, rather than a loose guess
+
+
+def test_youtube_picks_relevant_full_length_video(live_learning):
+    ls, _ = live_learning
+    pick = ls.LIVE_SOURCES[1].find("siem")[0]
+    assert pick["url"] == "https://www.youtube.com/watch?v=long1"  # not the 1-minute or the off-topic video
+    assert pick["hours"] == 3 and pick["provider"] == "YouTube · Sec Academy"
+
+
+def test_plan_combines_live_and_curated_and_caches(live_learning):
+    ls, yt_calls = live_learning
+    from app.agents.learning_agent import build_plan
+    gap = [{"slug": "siem", "skill": "SIEM", "priority": "high", "category": "tool", "demand_pct": 80}]
+    plan = build_plan(gap, 8)
+    origins = [i["origin"] for i in plan["items"]]
+    assert origins == ["live", "curated"] and plan["live_sources"] == ["YouTube"]
+    build_plan(gap, 8)
+    assert len(yt_calls) == 2  # search + videos once; the second plan came from the cache
+
+
+def test_live_failure_falls_back_to_curated(tmp_path, monkeypatch):
+    import app.learning_sources as ls
+    from app.config import settings
+    from app.agents.learning_agent import build_plan
+    monkeypatch.setattr(ls, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(ls.MicrosoftLearnSource, "_CATALOG_FILE", tmp_path / "ms.json")
+    monkeypatch.setattr(ls, "skill_cache", ls._SkillCache())
+    monkeypatch.setattr(ls, "_SKILL_CACHE_FILE", tmp_path / "c.json")
+    down = httpx.MockTransport(lambda r: httpx.Response(503))
+    monkeypatch.setattr(ls, "LIVE_SOURCES", [ls.MicrosoftLearnSource(transport=down), ls.YouTubeSource(transport=down)])
+    object.__setattr__(settings, "learning_mslearn", True); object.__setattr__(settings, "youtube_api_key", "k")
+    try:
+        plan = build_plan([{"slug": "sql", "skill": "SQL", "priority": "high", "category": "technical", "demand_pct": 90}], 8)
+        assert plan["items"] and all(i["origin"] == "curated" for i in plan["items"]) and plan["live_sources"] == []
+    finally:
+        object.__setattr__(settings, "learning_mslearn", False); object.__setattr__(settings, "youtube_api_key", "")

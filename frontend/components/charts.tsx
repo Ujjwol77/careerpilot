@@ -59,8 +59,8 @@ export function Kpi({ label, value, decimals = 0, suffix = "", hint, accent = "v
 export function Legend({ items }: { items: { label: string; color: string }[] }) {
   return (
     <ul className="legend">
-      {items.map((i) => (
-        <li key={i.label}><span className="swatch" style={{ background: i.color }} aria-hidden="true" />{i.label}</li>
+      {items.map((i, idx) => (
+        <li key={`${i.label}-${idx}`}><span className="swatch" style={{ background: i.color }} aria-hidden="true" />{i.label}</li>
       ))}
     </ul>
   );
@@ -77,7 +77,7 @@ export function HBarChart({ rows, max = 100, ariaLabel }: { rows: BarRow[]; max?
     <div className="chart" ref={ref} role="list" aria-label={ariaLabel} onMouseLeave={() => { hide(); setActive(null); }}>
       {rows.map((r, i) => (
         <div
-          key={r.label}
+          key={`${r.label}-${i}`}
           role="listitem"
           tabIndex={0}
           className={`hbar ${active !== null && active !== i ? "dim" : ""}`}
@@ -108,7 +108,7 @@ export function StackBar({ parts, total = 100, ariaLabel }: { parts: Part[]; tot
       <div className="stackbar" role="img" aria-label={ariaLabel}>
         {parts.map((p, i) => (
           <span
-            key={p.label}
+            key={`${p.label}-${i}`}
             className={`stackseg ${active !== null && active !== i ? "dim" : ""}`}
             style={{ width: `${(p.value / total) * 100}%`, background: p.color, animationDelay: `${i * 90}ms` }}
             onMouseMove={(e) => { setActive(i); show(e, <><strong>{p.label}</strong><br />{p.value.toFixed(1)} points{p.note ? <><br /><span className="tip-sub">{p.note}</span></> : null}</>); }}
@@ -143,7 +143,7 @@ export function Donut({ slices, centerValue, centerLabel, ariaLabel }: {
             const dash = Math.max(0, len - 2);
             const el = (
               <circle
-                key={s.label}
+                key={`${s.label}-${i}`}
                 className="donut-seg"
                 cx="70" cy="70" r={R} fill="none" stroke={s.color}
                 strokeWidth={active === i ? 21 : 16}
@@ -164,7 +164,7 @@ export function Donut({ slices, centerValue, centerLabel, ariaLabel }: {
       </div>
       <ul className="legend legend-col">
         {slices.map((s, i) => (
-          <li key={s.label} className={active !== null && active !== i ? "dim" : ""} onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}>
+          <li key={`${s.label}-${i}`} className={active !== null && active !== i ? "dim" : ""} onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}>
             <span className="swatch" style={{ background: s.color }} aria-hidden="true" />
             <span>{s.label}</span><strong>{s.value}</strong>
           </li>
@@ -205,7 +205,7 @@ export function Radar({ axes, ariaLabel }: { axes: Axis[]; ariaLabel: string }) 
           const anchor = Math.abs(lx - cx) < 8 ? "middle" : lx > cx ? "start" : "end";
           const tipNode = a.tip ?? <><strong>{a.label}</strong><br />{Math.round(a.value)}%</>;
           return (
-            <g key={a.label}>
+            <g key={`${a.label}-${i}`}>
               <text x={lx} y={ly + 4} textAnchor={anchor} className="radar-label">{a.label}</text>
               <text x={lx} y={ly + 18} textAnchor={anchor} className="radar-val">{Math.round(a.value)}%</text>
               <circle cx={x} cy={y} r={active === i ? 7 : 5} fill="var(--s1)" stroke="var(--card)" strokeWidth="2" style={{ transition: "r .15s" }} />

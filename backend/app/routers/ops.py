@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from ..agents.job_search_agent import job_source_mode
 from ..config import settings
 from ..data.seed_jobs import ROLE_PROFILES
 from ..db import get_db
@@ -23,6 +24,7 @@ def summary(user: User = Depends(get_current_user), db: Session = Depends(get_db
     ).all()
     return {
         "llm_provider": "mock" if get_llm().is_mock else settings.llm_provider,
+        "job_source": job_source_mode(),
         "agents": [{"agent": a, "runs": n, "avg_ms": round(avg or 0), "errors": int(err or 0)} for a, n, avg, err in rows],
     }
 

@@ -37,6 +37,7 @@ Agile/Scrum plans, UML diagrams and UI/UX design are written deliverables for yo
 - **Database:** set `DATABASE_URL` to a Postgres/Supabase URL. For pgvector, replace `embeddings.py` with hosted embeddings.
 - **Jobs:** live Australian postings come from the Adzuna API. Get a free key at https://developer.adzuna.com, set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` in `backend/.env`, and check it with `cd backend && python -m app.check_jobs "data analyst" Melbourne`. Searches are cached for 12 hours (`JOBS_CACHE_HOURS`). Without a key, or if the API fails, the 45 sample postings are used. Other APIs plug in through the `JobSource` interface in `job_search_agent.py`.
 - **Learning links:** `backend/app/data/learning.py` maps every skill to specific course pages (Kaggle Learn, Microsoft Learn, TryHackMe, Cisco NetAcad, Professor Messer, PortSwigger and others). Re-check them with `cd backend && python -m app.check_links`.
+- **Live learning resources:** the study plan also searches the Microsoft Learn Catalog API (free, no key, on by default) and YouTube (set `YOUTUBE_API_KEY`, free key with 100 searches/day) for each skill gap, and keeps one curated pick per skill. Results are cached per skill for 7 days in `backend/.cache/` (`LEARNING_CACHE_DAYS`). Check with `cd backend && python -m app.check_learning sql power_bi siem`. If both sources fail, the curated catalogue is used.
 - **Before deploying:** set a long random `SECRET_KEY` and set `CORS_ORIGINS`.
 
 ## Known limitations

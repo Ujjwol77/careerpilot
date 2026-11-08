@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, ApiError, useApi } from "@/lib/api";
-import { Card, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone } from "@/components/ui";
+import { Card, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone, sourceLabel } from "@/components/ui";
 import { HBarChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -99,9 +99,10 @@ export default function ReportPage() {
             <table>
               <thead><tr><th>Agent</th><th>Result</th><th>Output by</th><th>Time</th></tr></thead>
               <tbody>{r.agent_trace.map((a: any, i: number) => (
-                <tr key={i}><td>{a.agent.replaceAll("_", " ")}</td><td className="small">{a.note}</td><td>{a.llm_source}</td><td>{a.duration_ms} ms</td></tr>
+                <tr key={i}><td>{a.agent.replaceAll("_", " ")}</td><td className="small">{a.note}</td><td>{sourceLabel(a.llm_source)}</td><td>{a.duration_ms} ms</td></tr>
               ))}</tbody>
             </table>
+            <p className="muted small">Scores and matches come from fixed formulas so they are repeatable; the language model writes only the CV rewrites, report summary and interview feedback.</p>
           </Card>
         </>
       )}

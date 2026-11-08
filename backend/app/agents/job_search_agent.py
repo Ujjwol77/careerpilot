@@ -68,6 +68,11 @@ class AdzunaSource:
 
     def __init__(self, transport: httpx.BaseTransport | None = None):
         self._transport = transport  # tests inject a mock transport
+        self.reset_status()
+
+    def reset_status(self) -> None:
+        """What happened during the current agent run; read by describe_sources() for the agent log."""
+        self.status = {"api_calls": 0, "cache_hits": 0, "errors": []}
 
     @property
     def enabled(self) -> bool:
@@ -89,12 +94,16 @@ class AdzunaSource:
         cached = db.scalar(select(JobQueryCache).where(JobQueryCache.key == key))
         fresh_after = datetime.now(timezone.utc) - timedelta(hours=settings.jobs_cache_hours)
         if cached and _aware(cached.fetched_at) > fresh_after:
+            self.status["cache_hits"] += 1
             return self._saved(db, role, location)
         try:
             results = self._fetch(ROLE_PROFILES[role]["label"], location)
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             log.warning("Adzuna search failed for %s / %s: %s", role, location or "Australia", exc)
+            code = getattr(getattr(exc, "response", None), "status_code", None)
+            self.status["errors"].append(f"HTTP {code}" if code else type(exc).__name__)
             return self._saved(db, role, location)  # serve whatever was saved earlier
+        self.status["api_calls"] += 1
         for item in results:
             self._upsert(db, item, role)
         if cached:
@@ -159,6 +168,37 @@ def _clean(text: str) -> str:
 
 
 SOURCES: list[JobSource] = [AdzunaSource(), SeedDatasetSource()]
+
+
+def reset_source_status() -> None:
+    for source in SOURCES:
+        if isinstance(source, AdzunaSource):
+            source.reset_status()
+
+
+def describe_sources(jobs: list[Job]) -> tuple[str, str]:
+    """(engine, note) for the agent log: where the postings came from and what the live API did."""
+    live = sum(1 for j in jobs if j.source == AdzunaSource.name)
+    sample = len(jobs) - live
+    engine = "adzuna" if live and not sample else "adzuna+sample" if live else "sample-data"
+    adzuna = next((s for s in SOURCES if isinstance(s, AdzunaSource)), None)
+    if adzuna is None or not adzuna.enabled:
+        api = "Adzuna off (no ADZUNA_APP_ID/KEY)"
+    elif adzuna.status["errors"]:
+        api = f"Adzuna failed ({', '.join(sorted(set(adzuna.status['errors'])))})"
+    else:
+        parts = []
+        if adzuna.status["api_calls"]:
+            parts.append(f"{adzuna.status['api_calls']} API call(s)")
+        if adzuna.status["cache_hits"]:
+            parts.append(f"{adzuna.status['cache_hits']} cached search(es)")
+        api = "Adzuna " + (", ".join(parts) if parts else "used saved postings")
+    return engine, f"{live} Adzuna + {sample} sample; {api}"
+
+
+def job_source_mode() -> str:
+    adzuna = next((s for s in SOURCES if isinstance(s, AdzunaSource)), None)
+    return "adzuna" if adzuna and adzuna.enabled else "sample-data"
 
 
 def search_jobs(

@@ -1,4 +1,11 @@
-"""LLMOps run tracking: every agent execution is timed and logged to `agent_runs`."""
+"""LLMOps run tracking: every agent execution is timed and logged to `agent_runs`.
+
+llm_source says what produced an agent's output:
+  rules             - deterministic code (scoring formulas, taxonomy matching, API retrieval); no LLM involved
+  llm               - text written by the language model
+  template          - an LLM-capable agent ran without a model configured (LLM_PROVIDER=mock)
+  template-fallback - the model call failed, so the agent used its built-in template
+"""
 import time
 from contextlib import contextmanager
 
@@ -9,7 +16,7 @@ from .models import AgentRun
 
 @contextmanager
 def tracked(db: Session, user_id: int, agent: str, trace: list | None = None):
-    step = {"agent": agent, "status": "ok", "note": "", "llm_source": "template"}
+    step = {"agent": agent, "status": "ok", "note": "", "llm_source": "rules"}
     t0 = time.perf_counter()
     try:
         yield step

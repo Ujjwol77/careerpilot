@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from .agents.cv_agent import optimise_cv
 from .agents.interview_agent import preparation_plan
 from .agents.job_match_agent import match_jobs, profile_text
-from .agents.job_search_agent import search_jobs
+from .agents.job_search_agent import search_jobs, describe_sources, reset_source_status
 from .agents.learning_agent import build_plan
 from .agents.report_agent import build_report
 from .agents.skill_gap_agent import analyse_gaps
@@ -39,11 +39,14 @@ def load_context(db: Session, user: User, profile: Profile) -> dict:
 
 def search_and_match(db: Session, user: User, profile: Profile, ctx: dict, trace: list | None = None, limit: int = 10) -> list[dict]:
     with tracked(db, user.id, "job_search", trace) as step:
+        reset_source_status()
         jobs = search_jobs(db, role_categories=ctx["roles"], location=profile.location, min_salary=profile.min_salary, level=profile.experience_level)
         step["note"] = f"{len(jobs)} postings after filters"
         if len(jobs) < MIN_JOBS:
             jobs = search_jobs(db, role_categories=ctx["roles"])
             step["note"] += f"; reflected: relaxed filters -> {len(jobs)} postings"
+        step["llm_source"], sources_note = describe_sources(jobs)
+        step["note"] += f" ({sources_note})"
     with tracked(db, user.id, "job_matching", trace) as step:
         matches = match_jobs(ctx["skills"], ctx["text"], ctx["years"], jobs, limit=limit)
         step["note"] = f"ranked {len(jobs)} postings"

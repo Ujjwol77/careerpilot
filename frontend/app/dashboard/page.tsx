@@ -49,7 +49,7 @@ export default function Overview() {
           {r ? (
             <>
               <HBarChart ariaLabel="Match score of your top jobs" rows={r.top_jobs.map((j: any) => ({
-                label: j.title, value: j.score, display: String(Math.round(j.score)),
+                label: j.company ? `${j.title} · ${j.company}` : j.title, value: j.score, display: String(Math.round(j.score)),
                 tip: <><strong>{j.title}</strong><br />{j.company}<br />Score {Math.round(j.score)} · {bandLabel(j.readiness)}{j.missing_skills.length ? <><br /><span className="tip-sub">Missing: {j.missing_skills.join(", ")}</span></> : null}</>,
               }))} />
               <p className="small muted" style={{ marginTop: 8 }}><Link href="/dashboard/jobs">See all matches</Link></p>

@@ -1,6 +1,6 @@
 "use client";
 import { useApi } from "@/lib/api";
-import { Card, ErrorBox, Loading, PageHeader, Pill } from "@/components/ui";
+import { Card, ErrorBox, Loading, PageHeader, Pill, sourceLabel } from "@/components/ui";
 import { HBarChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -18,6 +18,8 @@ export default function OpsPage() {
         <Card title="Health">
           <p>LLM provider: <Pill tone={summary.data.llm_provider === "mock" ? "warn" : "good"}>{summary.data.llm_provider}</Pill>
             <span className="muted small"> {summary.data.llm_provider === "mock" ? "Rule-based templates are producing text. Set LLM_PROVIDER in the backend .env to use a real model." : ""}</span></p>
+          <p>Job source: <Pill tone={summary.data.job_source === "adzuna" ? "good" : "warn"}>{summary.data.job_source === "adzuna" ? "Adzuna API" : "sample jobs only"}</Pill>
+            <span className="muted small"> {summary.data.job_source === "adzuna" ? "Each job search run below shows how many postings came from Adzuna." : "Set ADZUNA_APP_ID and ADZUNA_APP_KEY in the backend .env for live jobs."}</span></p>
           {summary.data.agents.length === 0 ? <p className="muted">No agent runs yet.</p> : (
             <table>
               <thead><tr><th>Agent</th><th>Runs</th><th>Avg latency</th><th>Errors</th></tr></thead>
@@ -50,7 +52,7 @@ export default function OpsPage() {
             <thead><tr><th>When</th><th>Agent</th><th>Status</th><th>Engine</th><th>Note</th></tr></thead>
             <tbody>{runs.data.map((r) => (
               <tr key={r.id}><td className="small">{new Date(r.created_at).toLocaleTimeString()}</td><td>{r.agent.replaceAll("_", " ")}</td>
-                <td><Pill tone={r.status === "ok" ? "good" : "bad"}>{r.status}</Pill></td><td>{r.llm_source || "-"}</td><td className="small">{r.note}</td></tr>
+                <td><Pill tone={r.status === "ok" ? "good" : "bad"}>{r.status}</Pill></td><td>{sourceLabel(r.llm_source)}</td><td className="small">{r.note}</td></tr>
             ))}</tbody>
           </table>
         ) : <p className="muted">No runs yet.</p>}
