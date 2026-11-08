@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand"><i /> CareerPilot</div>
+        <div className="brand"><img src="/logo.svg" alt="" width={28} height={28} /> CareerPilot</div>
         <nav className="nav" aria-label="Main">
           {NAV.map((item, i) =>
             "group" in item ? (

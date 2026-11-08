@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <main className="auth-wrap">
       <div className="auth-card">
-        <div className="brand" style={{ color: "var(--ink)", paddingLeft: 0 }}><i /> CareerPilot</div>
+        <div className="brand" style={{ color: "var(--ink)", paddingLeft: 0 }}><img src="/logo.svg" alt="" width={28} height={28} /> CareerPilot</div>
         <h1>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
         <p className="muted">Seven collaborating AI agents that match you to jobs, fix your CV, close skill gaps and coach your interviews.</p>
         <div className="card">
