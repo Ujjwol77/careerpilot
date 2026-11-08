@@ -202,3 +202,26 @@ tbody tr:hover td { background: color-mix(in srgb, var(--brand) 7%, transparent)
   .hbar-fill, .stackseg, .radar-area, .line-path { animation: none; }
   .lift:hover, .btn:hover, .nav a:hover, .pill:hover, .ring:hover { transform: none; }
 }
+
+/* sidebar account menu (components/UserMenu.tsx) */
+.usermenu { position: relative; }
+.usermenu-trigger { display: flex; align-items: center; gap: 10px; padding: 8px; margin: -8px; width: calc(100% + 16px); background: transparent; border: 0; border-radius: 10px; color: var(--nav-ink); font: inherit; text-align: left; cursor: pointer; }
+.usermenu-trigger:hover, .usermenu-trigger[aria-expanded="true"] { background: rgba(255,255,255,.08); }
+.usermenu-avatar { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #bfd0ea; color: #12305b; font-weight: 700; }
+.usermenu-text { display: grid; min-width: 0; }
+.usermenu-name { color: #fff; font-weight: 600; }
+.usermenu-email { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usermenu-caret { margin-left: auto; opacity: .7; font-size: 12px; }
+.usermenu-panel { position: absolute; left: -4px; right: -4px; bottom: calc(100% + 14px); background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 12px 32px rgba(8, 18, 32, .28); z-index: 20; animation: usermenu-in .14s ease-out; }
+@keyframes usermenu-in { from { opacity: 0; transform: translateY(6px); } }
+.usermenu-who { display: grid; padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.usermenu-who span { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.usermenu-section { display: grid; gap: 6px; padding: 8px 10px; }
+.usermenu-section .theme-toggle { display: flex; width: 100%; }
+.usermenu-section .theme-toggle button { flex: 1; }
+.usermenu-label { font-size: 13px; color: var(--muted); }
+.usermenu-section .theme-toggle button { padding: 3px 8px; }
+.usermenu-item { display: block; width: 100%; padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; }
+.usermenu-item:hover { background: var(--brand-soft); }
+.usermenu-logout { color: var(--bad); border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .usermenu-panel { animation: none; } }
