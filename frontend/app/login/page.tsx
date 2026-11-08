@@ -1,4 +1,5 @@
 "use client";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { api, token } from "@/lib/api";
@@ -31,6 +32,7 @@ export default function LoginPage() {
 
   return (
     <main className="auth-wrap">
+      <ThemeToggle className="auth-theme" />
       <div className="auth-card">
         <div className="brand" style={{ color: "var(--ink)", paddingLeft: 0 }}><img src="/logo.svg" alt="" width={28} height={28} /> CareerPilot</div>
         <h1>{mode === "login" ? "Welcome back" : "Create your account"}</h1>

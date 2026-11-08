@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { api, ApiError, useApi } from "@/lib/api";
 import { Card, ErrorBox, NeedCv, PageHeader, Pill } from "@/components/ui";
+import { LineChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function InterviewPage() {
@@ -76,6 +77,13 @@ export default function InterviewPage() {
         </Card>
       )}
       <Card title="Past sessions">
+        {past.data?.filter((s) => s.average_score !== null).length ? (
+          <>
+            <p className="muted small">Average score per session (out of 10). Hover the line for details.</p>
+            <LineChart ariaLabel="Average interview score per session" max={10} unit="/10"
+              points={[...past.data].reverse().filter((s) => s.average_score !== null).map((s) => ({ label: new Date(s.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" }), value: s.average_score }))} />
+          </>
+        ) : null}
         {past.data?.length ? (
           <table>
             <thead><tr><th>Date</th><th>Role</th><th>Answered</th><th>Average</th></tr></thead>

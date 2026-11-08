@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, ApiError, useApi } from "@/lib/api";
-import { Card, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone } from "@/components/ui";
+import { Card, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone, sourceLabel } from "@/components/ui";
+import { HBarChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function ReportPage() {
@@ -52,7 +53,11 @@ export default function ReportPage() {
           </Card>
 
           <Card title="Top job matches">
-            <table>
+            <HBarChart ariaLabel="Match score of your top jobs" rows={r.top_jobs.map((j: any) => ({
+              label: j.title, value: j.score, display: String(Math.round(j.score)),
+              tip: <><strong>{j.title}</strong><br />{j.company}<br />Score {Math.round(j.score)} · {bandLabel(j.readiness)}</>,
+            }))} />
+            <table style={{ marginTop: 14 }}>
               <thead><tr><th>Role</th><th>Score</th><th>Readiness</th><th>Missing</th></tr></thead>
               <tbody>{r.top_jobs.map((j: any) => (
                 <tr key={j.job_id}><td><strong>{j.title}</strong><div className="muted small">{j.company} · {j.location}</div></td><td>{Math.round(j.score)}</td>
@@ -63,8 +68,13 @@ export default function ReportPage() {
 
           <div className="grid grid-2">
             <Card title="Skill gaps">
-              {r.skill_gaps.missing.length === 0 ? <p className="muted">No gaps found.</p> :
-                r.skill_gaps.missing.map((s: any) => <p key={s.slug} className="small"><Pill tone={s.priority === "high" ? "bad" : "warn"}>{s.priority}</Pill>{s.skill} ({s.demand_pct}% of jobs)</p>)}
+              {r.skill_gaps.missing.length === 0 ? <p className="muted">No gaps found.</p> : (
+                <HBarChart ariaLabel="Missing skills by demand" rows={r.skill_gaps.missing.map((s: any) => ({
+                  label: s.skill, value: s.demand_pct, display: `${s.demand_pct}%`,
+                  color: s.priority === "high" ? "var(--bad)" : s.priority === "medium" ? "var(--warn)" : "var(--s1)",
+                  tip: <><strong>{s.skill}</strong><br />Wanted by {s.demand_pct}% of jobs<br /><span className="tip-sub">{s.priority} priority</span></>,
+                }))} />
+              )}
               <p className="muted small">{r.skill_gaps.experience.advice}</p>
             </Card>
             <Card title="CV">
@@ -89,9 +99,10 @@ export default function ReportPage() {
             <table>
               <thead><tr><th>Agent</th><th>Result</th><th>Output by</th><th>Time</th></tr></thead>
               <tbody>{r.agent_trace.map((a: any, i: number) => (
-                <tr key={i}><td>{a.agent.replaceAll("_", " ")}</td><td className="small">{a.note}</td><td>{a.llm_source}</td><td>{a.duration_ms} ms</td></tr>
+                <tr key={i}><td>{a.agent.replaceAll("_", " ")}</td><td className="small">{a.note}</td><td>{sourceLabel(a.llm_source)}</td><td>{a.duration_ms} ms</td></tr>
               ))}</tbody>
             </table>
+            <p className="muted small">Scores and matches come from fixed formulas so they are repeatable; the language model writes only the CV rewrites, report summary and interview feedback.</p>
           </Card>
         </>
       )}

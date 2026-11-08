@@ -21,6 +21,11 @@ export default function LearningPage() {
           <Card>
             <strong>{data.total_hours} hours</strong> over about <strong>{data.total_weeks} weeks</strong>.
             <div>{data.focus_skills.map((s: string) => <Pill key={s} tone="brand">{s}</Pill>)}</div>
+            <p className="muted small">
+              {data.live_sources?.length
+                ? `Live results from ${data.live_sources.join(" and ")}, plus one curated pick per skill.`
+                : "Showing the curated course catalogue."}
+            </p>
           </Card>
           <Card title="Week by week">
             {data.weeks.map((w: any) => (
@@ -30,6 +35,7 @@ export default function LearningPage() {
                   <div key={it.skill + it.title} className="small">
                     <Pill tone={it.priority === "high" ? "bad" : it.priority === "medium" ? "warn" : "neutral"}>{it.type}</Pill>
                     <a href={it.url} target="_blank" rel="noopener noreferrer"><strong>{it.title}</strong></a>{" "}
+                    {it.origin === "live" && <Pill tone="good">live</Pill>}{" "}
                     <span className="muted">· {it.provider} · {it.cost} · {it.hours_source === "provider" ? "" : "~"}{it.hours}h · weeks {it.start_week}–{it.end_week}</span>
                   </div>
                 ))}

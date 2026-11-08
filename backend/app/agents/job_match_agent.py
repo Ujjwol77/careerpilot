@@ -31,7 +31,7 @@ def match_jobs(skills: set[str], text: str, years: float, jobs: list[Job], limit
         ranked.append({
             "job_id": job.id, "title": job.title, "company": job.company, "location": job.location,
             "level": job.level, "salary_min": job.salary_min, "salary_max": job.salary_max,
-            "role_category": job.role_category,
+            "role_category": job.role_category, "source": job.source, "url": job.url or "",
             "score": round(score, 1), "readiness": readiness_band(score),
             "components": {"semantic": round(semantic, 2), "skill_coverage": round(coverage, 2), "experience_fit": round(experience, 2)},
             "matched_skills": [display(s) for s in required if s in skills],
