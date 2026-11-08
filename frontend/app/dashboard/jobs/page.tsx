@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { api, ApiError, useApi } from "@/lib/api";
 import { Card, ErrorBox, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone, money } from "@/components/ui";
+import { Donut, Kpi, Legend, StackBar } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function JobsPage() {
@@ -67,12 +68,28 @@ function Matches() {
               ))}
             </div>
           </Card>
+          {data.count > 0 && (
+            <div className="grid grid-2">
+              <Card title="Matches by readiness">
+                <Donut ariaLabel="Matches grouped by readiness band" centerLabel="matches" slices={[
+                  { label: "Highly qualified", color: "var(--good)", value: data.matches.filter((m: any) => m.readiness === "HIGHLY_QUALIFIED").length },
+                  { label: "Qualified with gaps", color: "var(--warn)", value: data.matches.filter((m: any) => m.readiness === "QUALIFIED_WITH_GAPS").length },
+                  { label: "Development required", color: "var(--bad)", value: data.matches.filter((m: any) => m.readiness === "DEVELOPMENT_REQUIRED").length },
+                ].filter((s) => s.value > 0)} />
+              </Card>
+              <div className="stack">
+                <Kpi label="Best match score" value={Math.max(...data.matches.map((m: any) => m.score))} decimals={0} suffix="/100" accent="var(--s1)" />
+                <Kpi label="Average score" value={data.matches.reduce((a: number, m: any) => a + m.score, 0) / data.count} decimals={0} suffix="/100" accent="var(--s2)" />
+              </div>
+            </div>
+          )}
           <Card title={`${data.count} matches`}>
+            <Legend items={[{ label: "Meaning (35%)", color: "var(--s1)" }, { label: "Skills (50%)", color: "var(--s2)" }, { label: "Experience (15%)", color: "var(--s3)" }]} />
             {data.count === 0 && <p className="muted">No postings matched. Loosen your preferences and try again.</p>}
             {data.count > 0 && <SourceNote items={data.matches} />}
             {data.matches.map((m: any) => (
               <div className="job" key={m.job_id}>
-                <ScoreRing value={m.score} label={`Match score for ${m.title}`} />
+                <ScoreRing value={m.score} label={`Match score for ${m.title}`} size={72} />
                 <div className="job-body">
                   <div className="spread">
                     <div><strong>{m.title}</strong><div className="muted small">{m.company} · {m.location} · {salaryText(m.salary_min, m.salary_max)}</div><PostingLink url={m.url} source={m.source} /></div>
@@ -83,16 +100,11 @@ function Matches() {
                     {m.matched_skills.length > 0 && <p><strong>You have:</strong> {m.matched_skills.join(", ")}</p>}
                     {m.missing_skills.length > 0 && <p><strong>Missing:</strong> {m.missing_skills.join(", ")}</p>}
                   </div>
-                  <details>
-                    <summary>Why this score?</summary>
-                    <table>
-                      <tbody>
-                        <tr><td>Semantic similarity (35%)</td><td>{Math.round(m.components.semantic * 100)}%</td></tr>
-                        <tr><td>Skill coverage (50%)</td><td>{Math.round(m.components.skill_coverage * 100)}%</td></tr>
-                        <tr><td>Experience fit (15%)</td><td>{Math.round(m.components.experience_fit * 100)}%</td></tr>
-                      </tbody>
-                    </table>
-                  </details>
+                  <StackBar ariaLabel={`How the score for ${m.title} is made up`} parts={[
+                    { label: "Meaning match", value: m.components.semantic * 35, color: "var(--s1)", note: `${Math.round(m.components.semantic * 100)}% similar to your CV, worth up to 35` },
+                    { label: "Skill coverage", value: m.components.skill_coverage * 50, color: "var(--s2)", note: `${Math.round(m.components.skill_coverage * 100)}% of required skills, worth up to 50` },
+                    { label: "Experience fit", value: m.components.experience_fit * 15, color: "var(--s3)", note: `${Math.round(m.components.experience_fit * 100)}% fit, worth up to 15` },
+                  ]} />
                 </div>
               </div>
             ))}
