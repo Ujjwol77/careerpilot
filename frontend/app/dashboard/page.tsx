@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { token, useApi } from "@/lib/api";
 import { Card, Loading, PageHeader, Pill, ScoreRing, bandLabel, bandTone } from "@/components/ui";
 import { Donut, HBarChart, Kpi, Radar, type Slice } from "@/components/charts";
 
@@ -9,6 +10,7 @@ const CATS = [["technical", "Technical"], ["tool", "Tools"], ["soft", "Soft skil
 const STATUS: [string, string][] = [["saved", "var(--s1)"], ["applied", "var(--s2)"], ["interview", "var(--s3)"], ["offer", "var(--good)"], ["rejected", "var(--bad)"]];
 
 export default function Overview() {
+  const router = useRouter();
   const profile = useApi("/profile");
   const report = useApi("/report/latest");
   const apps = useApi<any[]>("/applications");
@@ -35,7 +37,8 @@ export default function Overview() {
 
   return (
     <>
-      <PageHeader title={`Hello${profile.data?.name ? `, ${profile.data.name.split(" ")[0]}` : ""}`} subtitle="Your career workspace at a glance. Hover any chart for details." />
+      <PageHeader title={`Hello${profile.data?.name ? `, ${profile.data.name.split(" ")[0]}` : ""}`} subtitle="Your career workspace at a glance. Hover any chart for details."
+        actions={<button type="button" className="btn btn-ghost" onClick={() => { token.clear(); router.replace("/login"); }}>Log out</button>} />
 
       <div className="kpis">
         <Kpi label="Readiness score" value={r ? r.readiness_score : null} decimals={0} suffix="/100" hint={r ? bandLabel(r.readiness_band) : "Generate a report"} accent="var(--s1)" />
