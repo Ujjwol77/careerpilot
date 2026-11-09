@@ -1,7 +1,9 @@
 # CareerPilot: multi-agent career platform (MVP)
 
-Next.js 14 frontend + FastAPI backend. Seven agents: Profile Understanding, Job Search, Job Matching, Skill Gap,
+Next.js 14 frontend + FastAPI backend. Seven agents: Profile Understanding, Job Search, Job Matching, Skill Gap, 
 CV Optimisation, Learning Pathway, Interview Coach, coordinated by an orchestrator.
+
+# however.. the interview can be limited as there are only 2 members
 
 ## Run it
 ```bash
@@ -41,6 +43,6 @@ Agile/Scrum plans, UML diagrams and UI/UX design are written deliverables for yo
 - **Before deploying:** set a long random `SECRET_KEY` and set `CORS_ORIGINS`.
 
 ## Known limitations
-- Default AI output is rule-based templates, not a language model. The real-LLM path is only tested with a mocked transport.
+
 - Live jobs need an Adzuna key; without one the app uses a synthetic 45-posting dataset with fictional companies. Adzuna returns only a description snippet, so skills found in live postings can be incomplete. Learning links go to specific course pages, but the catalogue is hand-curated (no course API yet), and most study hours are estimates; durations published by the provider are flagged `hours_source: provider`.
 - Processing is synchronous; the JWT is kept in localStorage (use httpOnly cookies in production); no rate limiting or email verification.

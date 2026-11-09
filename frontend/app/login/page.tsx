@@ -1,7 +1,8 @@
 "use client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { FormEvent, useEffect, useState } from "react";
 import { api, token } from "@/lib/api";
 import { ErrorBox } from "@/components/ui";
 
@@ -11,6 +12,10 @@ export default function LoginPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "register") setMode("register");
+  }, []);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
@@ -34,7 +39,7 @@ export default function LoginPage() {
     <main className="auth-wrap">
       <ThemeToggle className="auth-theme" />
       <div className="auth-card">
-        <div className="brand" style={{ color: "var(--ink)", paddingLeft: 0 }}><img src="/logo.svg" alt="" width={28} height={28} /> CareerPilot</div>
+        <Link href="/" className="brand" style={{ color: "var(--ink)", paddingLeft: 0, textDecoration: "none" }}><img src="/logo.svg" alt="" width={28} height={28} /> CareerPilot</Link>
         <h1>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
         <p className="muted">Seven collaborating AI agents that match you to jobs, fix your CV, close skill gaps and coach your interviews.</p>
         <div className="card">

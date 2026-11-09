@@ -92,7 +92,7 @@ function Matches() {
                 <ScoreRing value={m.score} label={`Match score for ${m.title}`} size={72} />
                 <div className="job-body">
                   <div className="spread">
-                    <div><strong>{m.title}</strong><div className="muted small">{m.company} · {m.location} · {salaryText(m.salary_min, m.salary_max)}</div><PostingLink url={m.url} source={m.source} /></div>
+                    <div><strong>{m.title}</strong> <SourceBadge source={m.source} /><div className="muted small">{m.company} · {m.location} · {salaryText(m.salary_min, m.salary_max)}</div><PostingLink url={m.url} source={m.source} /></div>
                     <Track jobId={m.job_id} />
                   </div>
                   <Pill tone={bandTone(m.readiness)}>{bandLabel(m.readiness)}</Pill>
@@ -146,7 +146,7 @@ function Search() {
             <div className="job" key={j.id}>
               <div className="job-body">
                 <div className="spread">
-                  <div><strong>{j.title}</strong><div className="muted small">{j.company} · {j.location} · {j.level} · {salaryText(j.salary_min, j.salary_max)}</div><PostingLink url={j.url} source={j.source} /></div>
+                  <div><strong>{j.title}</strong> <SourceBadge source={j.source} /><div className="muted small">{j.company} · {j.location} · {j.level} · {salaryText(j.salary_min, j.salary_max)}</div><PostingLink url={j.url} source={j.source} /></div>
                   <Track jobId={j.id} />
                 </div>
                 <p className="small">{j.description}</p>
@@ -184,4 +184,9 @@ function SourceNote({ items }: { items: { source?: string }[] }) {
   ) : (
     <p className="muted small">Showing sample postings (fictional companies). Add an Adzuna key in backend/.env for live Australian jobs.</p>
   );
+}
+
+/** Shows at a glance whether a posting is a live Adzuna advert or one of the sample jobs. */
+function SourceBadge({ source }: { source?: string }) {
+  return source === "adzuna" ? <Pill tone="good">Live · Adzuna</Pill> : <Pill tone="neutral">Sample job</Pill>;
 }

@@ -1,0 +1,112 @@
+/* CareerPilot landing page. Brand: logo navy, sky and the app's teal; one amber "you are here" marker. */
+@import url("https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap");
+
+.lp {
+  --lp-navy: #12305b;
+  --lp-sky: #bfd0ea;
+  --lp-amber: #e8a33d;
+  --lp-route: #12305b;
+  --lp-plane-a: #12305b;
+  --lp-plane-b: #5f7fae;
+  --lp-soft: #e9eff8;
+  font-family: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+:root[data-theme="dark"] .lp {
+  --lp-route: #bfd0ea; --lp-plane-a: #ffffff; --lp-plane-b: #bfd0ea; --lp-soft: #14243a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lp {
+    --lp-route: #bfd0ea; --lp-plane-a: #ffffff; --lp-plane-b: #bfd0ea; --lp-soft: #14243a;
+  }
+}
+
+/* top bar */
+.lp-bar { display: flex; align-items: center; gap: 24px; max-width: 1180px; margin: 0 auto; padding: 18px 28px; }
+.lp-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+.lp-logo img { border-radius: 8px; display: block; }
+.lp-nav { display: flex; gap: 22px; margin-left: 12px; }
+.lp-nav a, .lp-login { color: var(--muted); text-decoration: none; font-weight: 500; }
+.lp-nav a:hover, .lp-login:hover { color: var(--ink); }
+.lp-bar-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+
+/* hero */
+.lp-hero { max-width: 1180px; margin: 0 auto; padding: 56px 28px 72px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 40px; align-items: center; }
+.lp-hero h1 { font-size: clamp(40px, 5.6vw, 68px); line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; margin: 0 0 22px; max-width: 12ch; color: var(--lp-navy); }
+:root[data-theme="dark"] .lp-hero h1 { color: var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lp-hero h1 { color: var(--ink); } }
+.lp-lede { font-size: 19px; line-height: 1.55; max-width: 34em; margin: 0 0 28px; }
+.lp-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.lp-btn-big { padding: 13px 22px; font-size: 16px; }
+.lp-note { color: var(--muted); font-size: 14px; margin-top: 16px; max-width: 36em; }
+
+/* the route: the one moving thing on the page */
+.lp-route { margin: 0; background: var(--lp-soft); border-radius: 20px; padding: 12px 8px 4px; }
+.lp-route-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.lp-route-line { fill: none; stroke: var(--lp-route); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; }
+.lp-route-reveal { fill: none; stroke: #fff; stroke-width: 14; stroke-dasharray: 1; stroke-dashoffset: 0; animation: lp-draw 1.8s cubic-bezier(.45,.05,.25,1) both; }
+@keyframes lp-draw { from { stroke-dashoffset: 1; } }
+.lp-dot { fill: var(--lp-sky); stroke: var(--lp-route); stroke-width: 2; }
+.lp-here { fill: var(--lp-amber); stroke: var(--lp-route); stroke-width: 2; }
+.lp-stop { animation: lp-fade .4s ease both; }
+@keyframes lp-fade { from { opacity: 0; } }
+.lp-stop-label { font-family: inherit; font-size: 14px; font-weight: 600; fill: var(--ink); }
+.lp-stop-final { font-weight: 800; animation: lp-fade .4s ease 1.7s both; }
+.lp-plane { animation: lp-fade .5s ease 1.6s both; }
+.lp-plane-a { fill: var(--lp-plane-a); }
+.lp-plane-b { fill: var(--lp-plane-b); }
+.lp-route-list { display: none; }
+
+/* sections */
+.lp-section { max-width: 1180px; margin: 0 auto; padding: 64px 28px; }
+.lp-section h2, .lp-close h2 { font-size: clamp(28px, 3.2vw, 38px); line-height: 1.1; font-weight: 800; letter-spacing: -0.025em; margin: 0 0 14px; }
+.lp-section-head p, .lp-close p { font-size: 17px; color: var(--muted); max-width: 32em; }
+.lp-agents { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 48px; align-items: start; }
+.lp-section-head { position: sticky; top: 24px; }
+
+/* agent list continues the route: a dashed line with a stop per agent */
+.lp-agent-list { list-style: none; margin: 0; padding: 0 0 0 30px; position: relative; counter-reset: agent; }
+.lp-agent-list::before { content: ""; position: absolute; left: 8px; top: 10px; bottom: 10px; border-left: 3px dotted var(--lp-route); opacity: .55; }
+.lp-agent-list li { position: relative; counter-increment: agent; padding: 0 0 26px; display: grid; gap: 3px; }
+.lp-agent-list li::before { content: counter(agent); position: absolute; left: -32px; top: 1px; width: 22px; height: 22px; border-radius: 50%; background: var(--lp-sky); color: #12305b; border: 2px solid var(--lp-route); font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.lp-agent-list strong { font-size: 18px; letter-spacing: -0.01em; }
+.lp-agent-list span { color: var(--muted); max-width: 46em; }
+
+.lp-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 28px; }
+.lp-facts h3 { font-size: 18px; margin: 0 0 8px; padding-top: 14px; border-top: 3px solid var(--lp-route); }
+.lp-facts p { color: var(--muted); margin: 0; }
+
+.lp-close { max-width: 1180px; margin: 0 auto 64px; padding: 48px 28px; text-align: left; border-top: 1px solid var(--line); }
+.lp-close .btn { margin-top: 8px; }
+
+.lp-foot { max-width: 1180px; margin: 0 auto; padding: 24px 28px 40px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--line); }
+.lp-foot p { margin: 0; }
+
+/* tablet and phone: the route becomes a numbered vertical list */
+@media (max-width: 900px) {
+  .lp-nav { display: none; }
+  .lp-hero { grid-template-columns: 1fr; padding-top: 28px; }
+  .lp-agents { grid-template-columns: 1fr; gap: 24px; }
+  .lp-section-head { position: static; }
+  .lp-facts { grid-template-columns: 1fr; gap: 24px; }
+}
+@media (max-width: 600px) {
+  .lp-bar { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
+  .lp-bar-actions { gap: 10px; }
+  .lp-bar-actions .theme-toggle { display: none; }
+  .lp-login { display: none; }
+  .lp-hero, .lp-section, .lp-close, .lp-foot { padding-left: 16px; padding-right: 16px; }
+  .lp-route-svg { display: none; }
+  .lp-route { padding: 18px 18px 6px 18px; }
+  .lp-route-list { display: block; list-style: none; margin: 0; padding: 0 0 0 26px; position: relative; counter-reset: stop; }
+  .lp-route-list::before { content: ""; position: absolute; left: 7px; top: 8px; bottom: 18px; border-left: 3px dotted var(--lp-route); }
+  .lp-route-list li { counter-increment: stop; position: relative; padding-bottom: 12px; font-weight: 600; }
+  .lp-route-list li::before { content: ""; position: absolute; left: -25px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--lp-sky); border: 2px solid var(--lp-route); }
+  .lp-route-list li:first-child::before { background: var(--lp-amber); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-route-reveal, .lp-stop, .lp-plane, .lp-stop-final { animation: none; }
+}
