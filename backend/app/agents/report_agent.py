@@ -14,9 +14,9 @@ def build_report(*, name: str, target_label: str, matches: list[dict], cv: dict,
     fallback = (
         (f"Your best current match is {best['title']} at {best['company']} ({best['score']}%). " if best else "No matching jobs were found yet. ")
         + f"The biggest skill gap across your top matches is {top_gap}. "
-        + (f"Following the {learning['total_weeks']}-week plan is the fastest way to raise your readiness." if learning["total_weeks"] else "Focus on polishing your CV and interview answers.")
+        + (f"Starting with the {len(learning['items'])} recommended courses is the fastest way to raise your readiness." if learning["items"] else "Focus on polishing your CV and interview answers.")
     )
-    facts = f"readiness={readiness}; best={best['title'] if best else 'n/a'}; gap={top_gap}; ats={cv['ats_score']}; weeks={learning['total_weeks']}"
+    facts = f"readiness={readiness}; best={best['title'] if best else 'n/a'}; gap={top_gap}; ats={cv['ats_score']}; courses={len(learning['items'])}"
     summary, source = try_llm("report_summary.v1", fallback, facts=facts)
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -29,7 +29,7 @@ def build_report(*, name: str, target_label: str, matches: list[dict], cv: dict,
         "top_jobs": [{k: m[k] for k in ("job_id", "title", "company", "location", "score", "readiness", "matched_skills", "missing_skills")} for m in top],
         "cv": {k: cv[k] for k in ("ats_score", "keyword_coverage", "missing_keywords", "suggestions", "rewrite_examples", "target_job")},
         "skill_gaps": {"missing": gaps["missing"][:12], "strengths": gaps["strengths"], "experience": gaps["experience"]},
-        "learning": {k: learning[k] for k in ("hours_per_week", "total_hours", "total_weeks", "focus_skills", "weeks")},
+        "learning": {k: learning[k] for k in ("total_hours", "focus_skills", "items")},
         "interview": interview,
         "agent_trace": trace,
     }

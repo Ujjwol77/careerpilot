@@ -1,25 +1,20 @@
 "use client";
-import { useState } from "react";
 import { useApi } from "@/lib/api";
 import { Card, Loading, NeedCv, PageHeader, Pill } from "@/components/ui";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export default function LearningPage() {
-  const [hours, setHours] = useState(8);
-  const { data, error, loading } = useApi("/learning", { hours_per_week: hours });
+  const { data, error, loading } = useApi("/learning");
   if (error) return <NeedCv error={error} />;
   return (
     <>
-      <PageHeader title="Learning path" subtitle="The Learning Pathway Agent turns your skill gaps into a study schedule." />
-      <Card>
-        <label htmlFor="h">Hours per week you can study: {hours}</label>
-        <input id="h" type="range" min={1} max={40} value={hours} onChange={(e) => setHours(Number(e.target.value))} />
-      </Card>
+      <PageHeader title="Learning path" subtitle="Courses recommended by the Learning Pathway Agent to close your skill gaps." />
       {loading || !data ? <Loading /> : data.items.length === 0 ? (
         <Card><p className="muted">No gaps to plan for. Nice work.</p></Card>
       ) : (
         <>
           <Card>
-            <strong>{data.total_hours} hours</strong> over about <strong>{data.total_weeks} weeks</strong>.
+            <strong>{data.items.length} recommended courses</strong> for:
             <div>{data.focus_skills.map((s: string) => <Pill key={s} tone="brand">{s}</Pill>)}</div>
             <p className="muted small">
               {data.live_sources?.length
@@ -27,18 +22,17 @@ export default function LearningPage() {
                 : "Showing the curated course catalogue."}
             </p>
           </Card>
-          <Card title="Week by week">
-            {data.weeks.map((w: any) => (
-              <div className="week" key={w.week}>
-                <strong>Week {w.week}</strong>
-                {w.items.map((it: any) => (
-                  <div key={it.skill + it.title} className="small">
-                    <Pill tone={it.priority === "high" ? "bad" : it.priority === "medium" ? "warn" : "neutral"}>{it.type}</Pill>
-                    <a href={it.url} target="_blank" rel="noopener noreferrer"><strong>{it.title}</strong></a>{" "}
-                    {it.origin === "live" && <Pill tone="good">live</Pill>}{" "}
-                    <span className="muted">· {it.provider} · {it.cost} · {it.hours_source === "provider" ? "" : "~"}{it.hours}h · weeks {it.start_week}–{it.end_week}</span>
-                  </div>
-                ))}
+          <Card title="Recommended courses">
+            {data.items.map((it: any) => (
+              <div className="week" key={it.skill_name + it.url}>
+                <div className="small">
+                  <Pill tone={it.priority === "high" ? "bad" : it.priority === "medium" ? "warn" : "neutral"}>{it.type}</Pill>
+                  <a href={it.url} target="_blank" rel="noopener noreferrer"><strong>{it.title}</strong></a>{" "}
+                  {it.origin === "live" && <Pill tone="good">live</Pill>}{" "}
+                  <span className="muted">· {it.provider} · {it.cost} · {it.hours_source === "provider" ? "" : "~"}{it.hours}h</span>
+                </div>
+                <div className="small muted"><strong>For:</strong> {it.suitable_for}</div>
+                <div className="small muted">Closes your gap in {it.skill_name}</div>
               </div>
             ))}
           </Card>

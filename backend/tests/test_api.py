@@ -114,9 +114,12 @@ def test_job_match_ranks_relevant_role_first(client, uploaded):
 def test_skill_gap(client, uploaded):
     headers, _ = uploaded
     body = client.get(f"{API}/skill-gap", headers=headers).json()
-    assert body["jobs_analysed"] > 0 and body["missing"]
+    assert body["jobs_analysed"] >= 6 and body["missing"]  # role-wide benchmark, not just 5 jobs
     assert set(body["grouped"]) == {"Technical skills", "Tools", "Soft skills", "Certifications"}
     assert all(m["priority"] in {"high", "medium", "low"} for m in body["missing"])
+    assert all(m["tier"] in {"core", "common", "nice_to_have"} and m["why"] for m in body["missing"])
+    assert 0 <= body["overall_coverage_pct"] <= 100 and body["headline"] and body["next_step"]
+    assert body["confidence"]["level"] in {"good", "low"}
 
 
 def test_cv_optimise(client, uploaded):
@@ -126,15 +129,27 @@ def test_cv_optimise(client, uploaded):
     areas = {s["area"] for s in body["suggestions"]}
     assert "wording" in areas  # the sample CV uses "Responsible for ..." and "Worked on ..."
     assert body["rewrite_source"] == "template"
+    # every point lost is explained, and the score adds up
+    lost = sum(c["points_lost"] for c in body["checks"])
+    assert body["ats_score"] == max(0, round(100 - lost))
+    assert all(c["found"] and c["target"] and c["why"] for c in body["checks"])
+    pts = [s["points"] for s in body["suggestions"]]
+    assert pts == sorted(pts, reverse=True)  # ranked by points a fix would win back
+    reason = body["target_reason"]
+    assert reason["mode"] == "best_match" and reason["rank"] == 1 and set(reason["components"]) == {"semantic", "skill_coverage", "experience_fit"}
+    assert all(r["score"] <= reason["score"] for r in reason["runners_up"])
+    for pair in body["rewrites"]:
+        assert pair["before"] and pair["after"] and pair["why"]
     assert client.get(f"{API}/cv/optimise", headers=headers, params={"job_id": 99999}).status_code == 404
 
 
 def test_learning_plan(client, uploaded):
     headers, _ = uploaded
-    plan = client.get(f"{API}/learning", headers=headers, params={"hours_per_week": 10}).json()
-    assert plan["total_hours"] == sum(i["hours"] for i in plan["items"])
-    assert plan["total_weeks"] >= 1 and plan["weeks"][0]["week"] == 1
-    assert client.get(f"{API}/learning", headers=headers, params={"hours_per_week": 0}).status_code == 422
+    plan = client.get(f"{API}/learning", headers=headers).json()
+    assert plan["items"] and plan["total_hours"] == sum(i["hours"] for i in plan["items"])
+    assert all(i["suitable_for"].endswith(".") for i in plan["items"])  # every course says who it suits
+    assert not {"weeks", "total_weeks", "hours_per_week"} & plan.keys()  # no week schedule
+    assert not any("start_week" in i for i in plan["items"])
 
 
 def test_interview_flow(client, uploaded):
@@ -177,7 +192,7 @@ def test_applications_crud_and_isolation(client, uploaded, stranger):
 # ---------- orchestrator, report, LLMOps ----------
 def test_full_report_and_ops(client, uploaded):
     headers, _ = uploaded
-    r = client.post(f"{API}/report/generate", headers=headers, json={"hours_per_week": 8})
+    r = client.post(f"{API}/report/generate", headers=headers, json={})
     rep = r.json()
     assert r.status_code == 201
     agents = [t["agent"] for t in rep["agent_trace"]]
@@ -189,7 +204,7 @@ def test_full_report_and_ops(client, uploaded):
     assert sources["job_search"] == "sample-data"  # no Adzuna key in tests
     assert "Adzuna off" in next(t["note"] for t in rep["agent_trace"] if t["agent"] == "job_search")
     assert rep["readiness_band"] in {"HIGHLY_QUALIFIED", "QUALIFIED_WITH_GAPS", "DEVELOPMENT_REQUIRED"}
-    assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["weeks"] and rep["interview"]["schedule"]
+    assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["items"] and rep["interview"]["schedule"]
     assert client.get(f"{API}/report/latest", headers=headers).json()["generated_at"] == rep["generated_at"]
     summary = client.get(f"{API}/ops/summary", headers=headers).json()
     assert summary["llm_provider"] == "mock" and any(a["agent"] == "report" for a in summary["agents"])
@@ -427,3 +442,38 @@ def test_live_failure_falls_back_to_curated(tmp_path, monkeypatch):
         assert plan["items"] and all(i["origin"] == "curated" for i in plan["items"]) and plan["live_sources"] == []
     finally:
         object.__setattr__(settings, "learning_mslearn", False); object.__setattr__(settings, "youtube_api_key", "")
+
+
+# ---------- skill gap agent (pure function, no database) ----------
+from types import SimpleNamespace as _NS
+
+from app.agents.skill_gap_agent import analyse_gaps
+
+
+def _job(skills, years=0):
+    return _NS(skills=skills, min_years=years)
+
+
+def test_gap_demand_tier_and_unlocks():
+    jobs = [_job(["sql", "tableau"]), _job(["sql", "tableau", "python"]), _job(["sql"]), _job(["sql", "excel"], 3)]
+    r = analyse_gaps({"sql", "excel"}, jobs, 1)
+    gaps = {m["slug"]: m for m in r["missing"]}
+    assert set(gaps) == {"tableau", "python"}                 # skills you have are not gaps
+    assert gaps["tableau"]["demand_pct"] == 50 and gaps["tableau"]["tier"] == "common"
+    assert gaps["tableau"]["unlocks"] == 1                    # only skill missing for job 1
+    assert gaps["tableau"]["adjacent"] == "Excel"             # same family as a skill you have
+    assert r["missing"][0]["slug"] == "tableau"               # higher demand ranks first
+
+
+def test_gap_coverage_and_experience_use_demand_and_median():
+    jobs = [_job(["sql"], 1), _job(["sql"], 2), _job(["sql", "docker"], 10)]
+    r = analyse_gaps({"sql"}, jobs, 2)
+    cov = {c["category"]: c for c in r["coverage"]}
+    assert cov["technical"]["coverage_pct"] == 100 and cov["tool"]["coverage_pct"] == 0
+    assert r["experience"]["typical_required_years"] == 2     # median, so one senior advert does not distort it
+    assert r["experience"]["range"] == [1, 10] and r["experience"]["meets_pct"] == 67
+
+
+def test_gap_low_confidence_with_few_postings():
+    r = analyse_gaps(set(), [_job(["sql"])], 0)
+    assert r["confidence"]["level"] == "low"

@@ -8,14 +8,13 @@ import { HBarChart } from "@/components/charts";
 export default function ReportPage() {
   const latest = useApi("/report/latest");
   const [r, setR] = useState<any>(null);
-  const [hours, setHours] = useState(8);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   useEffect(() => { if (latest.data) setR(latest.data); }, [latest.data]);
 
   async function generate() {
     setBusy(true); setError(null);
-    try { setR(await api("/report/generate", { body: { hours_per_week: hours } })); }
+    try { setR(await api("/report/generate", { body: {} })); }
     catch (e) { setError(e instanceof ApiError ? e : null); }
     finally { setBusy(false); }
   }
@@ -30,10 +29,6 @@ export default function ReportPage() {
       />
       <Card className="no-print">
         <div className="row">
-          <div style={{ minWidth: 200 }}>
-            <label htmlFor="h">Study hours per week: {hours}</label>
-            <input id="h" type="range" min={1} max={40} value={hours} onChange={(e) => setHours(Number(e.target.value))} />
-          </div>
           <button className="btn" onClick={generate} disabled={busy}>{busy ? "Running agents…" : r ? "Regenerate report" : "Generate report"}</button>
         </div>
       </Card>
@@ -85,8 +80,9 @@ export default function ReportPage() {
 
           <div className="grid grid-2">
             <Card title="Learning plan">
-              <p>{r.learning.total_hours} hours · about {r.learning.total_weeks} weeks at {r.learning.hours_per_week} h/week</p>
+              <p>{r.learning.items.length} recommended courses</p>
               <div>{r.learning.focus_skills.map((s: string) => <Pill key={s} tone="brand">{s}</Pill>)}</div>
+              {r.learning.items.slice(0, 4).map((c: any) => <p key={c.url} className="small">• <a href={c.url} target="_blank" rel="noopener noreferrer">{c.title}</a> <span className="muted">({c.provider})</span></p>)}
             </Card>
             <Card title="Interview preparation">
               {r.interview.focus_areas.length > 0 && <p className="small"><strong>Focus:</strong> {r.interview.focus_areas.join(", ")}</p>}

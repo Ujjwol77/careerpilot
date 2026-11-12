@@ -13,7 +13,7 @@ router = APIRouter(prefix="/report", tags=["report"])
 
 @router.post("/generate", status_code=201)
 def generate(body: ReportIn | None = None, user: User = Depends(get_current_user), profile: Profile = Depends(require_profile), db: Session = Depends(get_db)):
-    payload = run_full_evaluation(db, user, profile, (body.hours_per_week if body else 8))
+    payload = run_full_evaluation(db, user, profile)
     db.add(Report(user_id=user.id, payload=payload))
     db.add(AuditLog(user_id=user.id, action="REPORT_GENERATED"))
     db.commit()

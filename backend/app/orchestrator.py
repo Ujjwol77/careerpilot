@@ -60,7 +60,21 @@ def top_job_objects(db: Session, matches: list[dict], n: int = 5) -> list[Job]:
     return [j for m in matches[:n] if (j := db.get(Job, m["job_id"]))]
 
 
-def run_full_evaluation(db: Session, user: User, profile: Profile, hours_per_week: int = 8) -> dict:
+def benchmark_jobs(db: Session, ctx: dict, matches: list[dict], limit: int = 60) -> tuple[list[Job], str]:
+    """Postings used as the benchmark for skill gaps: every posting for the target role we hold.
+
+    Using only the 5 best matches is biased (they are the jobs the candidate already fits), so the gap
+    analysis uses the whole role pool, falling back to the best matches when the pool is small.
+    """
+    roles = ctx["roles"] or ([matches[0]["role_category"]] if matches else [])
+    label = " / ".join(ROLE_PROFILES[r]["label"] for r in roles if r in ROLE_PROFILES) or "target role"
+    pool = list(db.scalars(select(Job).where(Job.role_category.in_(roles)).order_by(Job.id.desc()).limit(limit))) if roles else []
+    if len(pool) < 6:
+        pool, label = top_job_objects(db, matches, 10), "best-matching"
+    return pool, label
+
+
+def run_full_evaluation(db: Session, user: User, profile: Profile) -> dict:
     trace: list[dict] = []
     ctx = load_context(db, user, profile)
     with tracked(db, user.id, "profile_understanding", trace) as step:
@@ -70,14 +84,15 @@ def run_full_evaluation(db: Session, user: User, profile: Profile, hours_per_wee
     jobs = top_job_objects(db, matches)
 
     with tracked(db, user.id, "skill_gap", trace) as step:
-        gaps = analyse_gaps(ctx["skills"], jobs, ctx["years"])
-        step["note"] = f"{len(gaps['missing'])} gaps across {len(jobs)} jobs"
+        pool, role_label = benchmark_jobs(db, ctx, matches)
+        gaps = analyse_gaps(ctx["skills"], pool, ctx["years"], role_label)
+        step["note"] = f"{len(gaps['missing'])} gaps across {len(pool)} {role_label} postings"
     with tracked(db, user.id, "cv_optimisation", trace) as step:
         cv = optimise_cv(ctx["cv_text"], ctx["skills"], jobs[0] if jobs else None)
         step["note"], step["llm_source"] = f"ATS score {cv['ats_score']}", cv["rewrite_source"]
     with tracked(db, user.id, "learning_pathway", trace) as step:
-        learning = build_plan(gaps["missing"], hours_per_week)
-        step["note"] = f"{learning['total_hours']}h over {learning['total_weeks']} weeks"
+        learning = build_plan(gaps["missing"])
+        step["note"] = f"{len(learning['items'])} recommended courses"
     role = matches[0]["role_category"] if matches else (ctx["roles"][0] if ctx["roles"] else "data_analyst")
     with tracked(db, user.id, "interview_coach", trace) as step:
         interview = preparation_plan(role, [g["skill"] for g in gaps["missing"]])
