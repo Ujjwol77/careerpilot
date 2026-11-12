@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, token } from "@/lib/api";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 
 const NAV = [
   { href: "/dashboard", label: "Overview" },
@@ -63,12 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </nav>
         <div className="userbox">
-          <div style={{ color: "#fff", fontWeight: 600 }}>{user.name || "Job seeker"}</div>
-          <div>{user.email}</div>
-          
-          {/* <ThemeToggle className="sidebar-theme" /> */}
-          {/* <button className="btn btn-ghost btn-small" style={{ marginTop: 10, color: "inherit", borderColor: "rgba(255,255,255,.25)" }} */}
-            {/* onClick={() => { token.clear(); router.replace("/login"); }}>Log out</button>  */}
+          <UserMenu name={user.name || "Job seeker"} email={user.email} />
         </div>
       </aside>
       <main className="main">{children}</main>

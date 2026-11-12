@@ -42,6 +42,14 @@ def _contains(text: str, term: str) -> bool:
     return re.search(rf"(?<![\w#+]){re.escape(term)}(?![\w#+])", text) is not None
 
 
+def _write_json(path: Path, data) -> None:
+    """Write JSON atomically: a crash or reload mid-write can't leave an empty or half-written file."""
+    CACHE_DIR.mkdir(exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data), encoding="utf-8")
+    tmp.replace(path)
+
+
 def _hours(minutes: float) -> int:
     return max(1, math.ceil(minutes / 60))
 
@@ -68,8 +76,7 @@ class _SkillCache:
     def put(self, key: str, items: list[dict]) -> None:
         self._load()[key] = {"at": time.time(), "items": items}
         try:
-            CACHE_DIR.mkdir(exist_ok=True)
-            _SKILL_CACHE_FILE.write_text(json.dumps(self._data), encoding="utf-8")
+            _write_json(_SKILL_CACHE_FILE, self._data)
         except OSError as exc:  # read-only disk: keep the in-memory cache
             log.warning("could not write learning cache: %s", exc)
 
@@ -114,8 +121,7 @@ class MicrosoftLearnSource:
                 self._failed_at = time.time()
                 return []
             try:
-                CACHE_DIR.mkdir(exist_ok=True)
-                self._CATALOG_FILE.write_text(json.dumps(raw), encoding="utf-8")
+                _write_json(self._CATALOG_FILE, raw)
             except OSError:
                 pass
         items = []
