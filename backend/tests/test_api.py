@@ -261,6 +261,17 @@ def test_llm_failure_falls_back(monkeypatch):
     fake = llm.OpenAICompatLLM("key", "https://example.test/v1", "m", transport=httpx.MockTransport(lambda r: httpx.Response(500)))
     monkeypatch.setattr(llm, "get_llm", lambda: fake)
     assert llm.try_llm("report_summary.v1", "fallback text", facts="x") == ("fallback text", "template-fallback")
+    assert llm.last_error() == "HTTP 500"
+
+
+def test_llm_failure_reason_is_shown_without_the_key(monkeypatch):
+    import app.llm as llm
+    gemini_429 = [{"error": {"code": 429, "message": "Resource has been exhausted (e.g. check quota).", "status": "RESOURCE_EXHAUSTED"}}]
+    fake = llm.OpenAICompatLLM("secret-key-123", "https://example.test/v1", "m",
+                               transport=httpx.MockTransport(lambda r: httpx.Response(429, json=gemini_429)))
+    monkeypatch.setattr(llm, "get_llm", lambda: fake)
+    llm.try_llm("report_summary.v1", "fallback", facts="x")
+    assert llm.last_error() == "HTTP 429: Resource has been exhausted (e.g. check quota)." and "secret" not in llm.last_error()
 
 
 def test_every_skill_has_direct_learning_links():

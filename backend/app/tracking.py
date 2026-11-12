@@ -11,6 +11,7 @@ from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
 
+from .llm import last_error
 from .models import AgentRun
 
 
@@ -26,6 +27,8 @@ def tracked(db: Session, user_id: int, agent: str, trace: list | None = None):
         raise
     finally:
         step["duration_ms"] = int((time.perf_counter() - t0) * 1000)
+        if step["llm_source"] == "template-fallback" and last_error():
+            step["note"] = f"{step['note']}; LLM failed: {last_error()}".lstrip("; ")
         db.add(AgentRun(user_id=user_id, agent=agent, status=step["status"], duration_ms=step["duration_ms"],
                         llm_source=step["llm_source"], note=step["note"][:300]))
         db.commit()
