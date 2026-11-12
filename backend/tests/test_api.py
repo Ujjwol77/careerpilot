@@ -126,6 +126,17 @@ def test_cv_optimise(client, uploaded):
     areas = {s["area"] for s in body["suggestions"]}
     assert "wording" in areas  # the sample CV uses "Responsible for ..." and "Worked on ..."
     assert body["rewrite_source"] == "template"
+    # every point lost is explained, and the score adds up
+    lost = sum(c["points_lost"] for c in body["checks"])
+    assert body["ats_score"] == max(0, round(100 - lost))
+    assert all(c["found"] and c["target"] and c["why"] for c in body["checks"])
+    pts = [s["points"] for s in body["suggestions"]]
+    assert pts == sorted(pts, reverse=True)  # ranked by points a fix would win back
+    reason = body["target_reason"]
+    assert reason["mode"] == "best_match" and reason["rank"] == 1 and set(reason["components"]) == {"semantic", "skill_coverage", "experience_fit"}
+    assert all(r["score"] <= reason["score"] for r in reason["runners_up"])
+    for pair in body["rewrites"]:
+        assert pair["before"] and pair["after"] and pair["why"]
     assert client.get(f"{API}/cv/optimise", headers=headers, params={"job_id": 99999}).status_code == 404
 
 
