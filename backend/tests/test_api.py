@@ -131,10 +131,11 @@ def test_cv_optimise(client, uploaded):
 
 def test_learning_plan(client, uploaded):
     headers, _ = uploaded
-    plan = client.get(f"{API}/learning", headers=headers, params={"hours_per_week": 10}).json()
-    assert plan["total_hours"] == sum(i["hours"] for i in plan["items"])
-    assert plan["total_weeks"] >= 1 and plan["weeks"][0]["week"] == 1
-    assert client.get(f"{API}/learning", headers=headers, params={"hours_per_week": 0}).status_code == 422
+    plan = client.get(f"{API}/learning", headers=headers).json()
+    assert plan["items"] and plan["total_hours"] == sum(i["hours"] for i in plan["items"])
+    assert all(i["suitable_for"].endswith(".") for i in plan["items"])  # every course says who it suits
+    assert not {"weeks", "total_weeks", "hours_per_week"} & plan.keys()  # no week schedule
+    assert not any("start_week" in i for i in plan["items"])
 
 
 def test_interview_flow(client, uploaded):
@@ -177,7 +178,7 @@ def test_applications_crud_and_isolation(client, uploaded, stranger):
 # ---------- orchestrator, report, LLMOps ----------
 def test_full_report_and_ops(client, uploaded):
     headers, _ = uploaded
-    r = client.post(f"{API}/report/generate", headers=headers, json={"hours_per_week": 8})
+    r = client.post(f"{API}/report/generate", headers=headers, json={})
     rep = r.json()
     assert r.status_code == 201
     agents = [t["agent"] for t in rep["agent_trace"]]
@@ -189,7 +190,7 @@ def test_full_report_and_ops(client, uploaded):
     assert sources["job_search"] == "sample-data"  # no Adzuna key in tests
     assert "Adzuna off" in next(t["note"] for t in rep["agent_trace"] if t["agent"] == "job_search")
     assert rep["readiness_band"] in {"HIGHLY_QUALIFIED", "QUALIFIED_WITH_GAPS", "DEVELOPMENT_REQUIRED"}
-    assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["weeks"] and rep["interview"]["schedule"]
+    assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["items"] and rep["interview"]["schedule"]
     assert client.get(f"{API}/report/latest", headers=headers).json()["generated_at"] == rep["generated_at"]
     summary = client.get(f"{API}/ops/summary", headers=headers).json()
     assert summary["llm_provider"] == "mock" and any(a["agent"] == "report" for a in summary["agents"])

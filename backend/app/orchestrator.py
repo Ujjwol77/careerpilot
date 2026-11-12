@@ -60,7 +60,7 @@ def top_job_objects(db: Session, matches: list[dict], n: int = 5) -> list[Job]:
     return [j for m in matches[:n] if (j := db.get(Job, m["job_id"]))]
 
 
-def run_full_evaluation(db: Session, user: User, profile: Profile, hours_per_week: int = 8) -> dict:
+def run_full_evaluation(db: Session, user: User, profile: Profile) -> dict:
     trace: list[dict] = []
     ctx = load_context(db, user, profile)
     with tracked(db, user.id, "profile_understanding", trace) as step:
@@ -76,8 +76,8 @@ def run_full_evaluation(db: Session, user: User, profile: Profile, hours_per_wee
         cv = optimise_cv(ctx["cv_text"], ctx["skills"], jobs[0] if jobs else None)
         step["note"], step["llm_source"] = f"ATS score {cv['ats_score']}", cv["rewrite_source"]
     with tracked(db, user.id, "learning_pathway", trace) as step:
-        learning = build_plan(gaps["missing"], hours_per_week)
-        step["note"] = f"{learning['total_hours']}h over {learning['total_weeks']} weeks"
+        learning = build_plan(gaps["missing"])
+        step["note"] = f"{len(learning['items'])} recommended courses"
     role = matches[0]["role_category"] if matches else (ctx["roles"][0] if ctx["roles"] else "data_analyst")
     with tracked(db, user.id, "interview_coach", trace) as step:
         interview = preparation_plan(role, [g["skill"] for g in gaps["missing"]])

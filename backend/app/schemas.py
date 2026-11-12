@@ -47,4 +47,4 @@ class InterviewAnswerIn(BaseModel):
 
 
 class ReportIn(BaseModel):
-    hours_per_week: int = Field(default=8, ge=1, le=40)
+    pass  # report takes no options; kept so clients can still POST an empty body

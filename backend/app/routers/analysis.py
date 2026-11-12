@@ -46,12 +46,12 @@ def cv_optimise(job_id: int | None = Query(None), user: User = Depends(get_curre
 
 
 @router.get("/learning")
-def learning(hours_per_week: int = Query(8, ge=1, le=40), user: User = Depends(get_current_user), profile: Profile = Depends(require_profile), db: Session = Depends(get_db)):
+def learning(user: User = Depends(get_current_user), profile: Profile = Depends(require_profile), db: Session = Depends(get_db)):
     ctx, matches, jobs = _context(db, user, profile)
     gaps = analyse_gaps(ctx["skills"], jobs, ctx["years"])
     with tracked(db, user.id, "learning_pathway") as step:
-        plan = build_plan(gaps["missing"], hours_per_week)
-        step["note"] = f"{plan['total_hours']}h"
+        plan = build_plan(gaps["missing"])
+        step["note"] = f"{len(plan['items'])} courses"
     return plan
 
 
