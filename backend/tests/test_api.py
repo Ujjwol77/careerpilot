@@ -208,6 +208,8 @@ def test_full_report_and_ops(client, uploaded):
     assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["items"] and rep["interview"]["schedule"]
     assert client.get(f"{API}/report/latest", headers=headers).json()["generated_at"] == rep["generated_at"]
     summary = client.get(f"{API}/ops/summary", headers=headers).json()
+    assert set(summary["services"]) == {"gemini", "embeddings", "adzuna", "mslearn", "youtube"}
+    assert summary["services"]["gemini"]["set_up"] is False  # mock LLM in tests
     assert summary["llm_provider"] == "mock" and any(a["agent"] == "report" for a in summary["agents"])
     assert client.get(f"{API}/ops/runs", headers=headers).json()[0]["status"] == "ok"
     ids = [p["id"] for p in client.get(f"{API}/prompts", headers=headers).json()]
@@ -456,7 +458,6 @@ def test_live_failure_falls_back_to_curated(tmp_path, monkeypatch):
         object.__setattr__(settings, "learning_mslearn", False); object.__setattr__(settings, "youtube_api_key", "")
 
 
-<<<<<<< HEAD
 # ---------- semantic matching through an embedding API (fake server) ----------
 _TOPICS = [("data", "analyst", "sql", "power bi", "dashboard", "statistics"),
            ("security", "cyber", "siem", "incident", "vulnerab", "threat"),
@@ -517,7 +518,8 @@ def test_semantic_falls_back_to_local_when_api_fails(embedding_api):
         jobs = list(db.scalars(select(Job).where(Job.source == "seed-dataset")))[:5]
         scores, info = sem.semantic_scores(db, "data analyst", jobs, transport=httpx.MockTransport(lambda r: httpx.Response(500)))
         assert info["engine"] == sem.LOCAL_ENGINE and info["fallback_reason"] == "HTTP 500" and len(scores) == 5
-=======
+
+
 # ---------- skill gap agent (pure function, no database) ----------
 from types import SimpleNamespace as _NS
 
@@ -551,4 +553,3 @@ def test_gap_coverage_and_experience_use_demand_and_median():
 def test_gap_low_confidence_with_few_postings():
     r = analyse_gaps(set(), [_job(["sql"])], 0)
     assert r["confidence"]["level"] == "low"
->>>>>>> 6139441f36757e880e7e855bf4b8e46d28e2785d

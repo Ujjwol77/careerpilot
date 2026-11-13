@@ -203,18 +203,25 @@ tbody tr:hover td { background: color-mix(in srgb, var(--brand) 7%, transparent)
   .lift:hover, .btn:hover, .nav a:hover, .pill:hover, .ring:hover { transform: none; }
 }
 
-/* ===== collapsible sidebar: click the logo to hide the menu and keep only the logo ===== */
+/* ===== collapsible sidebar: click the logo to hide the whole panel; the logo floats top-left to reopen it ===== */
 .brand-btn { background: none; border: 0; width: 100%; cursor: pointer; font: inherit; font-weight: 700; font-size: 18px; text-align: left; border-radius: 10px; }
 .brand-btn:hover img { filter: brightness(1.15); }
 .brand-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.shell { transition: grid-template-columns .22s ease; }
-.shell.collapsed { grid-template-columns: 72px 1fr; }
-.shell.collapsed .sidebar { padding: 20px 10px; overflow: hidden; }
-.shell.collapsed .brand { justify-content: center; padding: 4px 0 18px; }
-.shell.collapsed .brand-name, .shell.collapsed .nav, .shell.collapsed .userbox { display: none; }
+.brand-btn:focus:not(:focus-visible) { outline: none; }
+.main { margin-inline: auto; } /* content sits centred in whatever space the sidebar leaves */
+@media (min-width: 861px) {
+  .shell { transition: grid-template-columns .22s ease; }
+  .shell > .main { grid-column: 2; } /* stays in the content column even when the sidebar is taken out of the grid */
+  .shell.collapsed { grid-template-columns: 0 1fr; }
+  .shell.collapsed .sidebar { position: fixed; top: 16px; left: 16px; z-index: 30; width: auto; height: auto; padding: 0; background: transparent; overflow: visible; }
+  .shell.collapsed .brand { width: auto; padding: 8px; gap: 0; background: var(--nav); border-radius: 12px; box-shadow: 0 6px 18px rgba(8, 18, 32, .25); }
+  .shell.collapsed .brand-name, .shell.collapsed .nav, .shell.collapsed .userbox { display: none; }
+}
+/* medium screens: keep the floating logo clear of the page heading */
+@media (min-width: 861px) and (max-width: 1260px) { .shell.collapsed .main { padding-left: 84px; } }
 @media (max-width: 860px) {
-  .shell.collapsed { grid-template-columns: 1fr; }
   .shell.collapsed .sidebar { padding: 10px; }
+  .shell.collapsed .nav, .shell.collapsed .userbox { display: none; }
   .shell.collapsed .brand { justify-content: flex-start; padding: 4px 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .shell { transition: none; } }
