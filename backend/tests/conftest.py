@@ -9,6 +9,7 @@ os.environ["ADZUNA_APP_ID"] = ""   # tests use the sample jobs; a developer's .e
 os.environ["ADZUNA_APP_KEY"] = ""
 os.environ["LEARNING_MSLEARN"] = "false"  # tests never call live learning APIs
 os.environ["YOUTUBE_API_KEY"] = ""
+os.environ["EMBEDDING_PROVIDER"] = "local"  # tests never call the embedding API
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

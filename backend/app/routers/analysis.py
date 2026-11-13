@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..agents.cv_agent import optimise_cv
 from ..agents.interview_agent import build_questions, evaluate_answer
 from ..agents.job_match_agent import WEIGHTS, match_jobs
+from ..semantic import semantic_scores
 from ..agents.learning_agent import build_plan
 from ..agents.skill_gap_agent import analyse_gaps
 from ..data.seed_jobs import ROLE_PROFILES
@@ -43,20 +44,24 @@ def cv_optimise(job_id: int | None = Query(None), user: User = Depends(get_curre
     with tracked(db, user.id, "cv_optimisation") as step:
         result = optimise_cv(ctx["cv_text"], ctx["skills"], target)
         step["note"], step["llm_source"] = f"ATS score {result['ats_score']}", result["rewrite_source"]
-    result["target_reason"] = explain_target(target, matches, ctx, chosen=bool(job_id))
+    result["target_reason"] = explain_target(target, matches, ctx, chosen=bool(job_id), db=db)
     return result
 
 
-def explain_target(target: Job | None, matches: list[dict], ctx: dict, chosen: bool) -> dict | None:
+def explain_target(target: Job | None, matches: list[dict], ctx: dict, chosen: bool, db: Session | None = None) -> dict | None:
     """Why the review is tailored to this job: its rank and match-score breakdown among the user's matches."""
     if not target:
         return None
     rank = next((i for i, m in enumerate(matches) if m["job_id"] == target.id), None)
-    m = matches[rank] if rank is not None else match_jobs(ctx["skills"], ctx["text"], ctx["years"], [target])[0]
+    if rank is not None:
+        m = matches[rank]
+    else:
+        sem, info = semantic_scores(db, ctx["text"], [target])
+        m = match_jobs(ctx["skills"], ctx["text"], ctx["years"], [target], semantic=sem, semantic_engine=info["engine"])[0]
     return {
         "mode": "chosen" if chosen else "best_match",
         "rank": rank + 1 if rank is not None else None, "of": len(matches),
-        "score": m["score"], "readiness": m["readiness"], "components": m["components"],
+        "score": m["score"], "readiness": m["readiness"], "components": m["components"], "semantic_engine": m.get("semantic_engine"),
         "weights": {"semantic": WEIGHTS["semantic"], "skill_coverage": WEIGHTS["coverage"], "experience_fit": WEIGHTS["experience"]},
         "matched_skills": m["matched_skills"], "missing_skills": m["missing_skills"],
         "runners_up": [{"job_id": r["job_id"], "title": r["title"], "company": r["company"], "score": r["score"]}

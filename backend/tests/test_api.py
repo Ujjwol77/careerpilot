@@ -1,4 +1,5 @@
 import io
+import json
 
 import httpx
 import pytest
@@ -450,3 +451,65 @@ def test_live_failure_falls_back_to_curated(tmp_path, monkeypatch):
         assert plan["items"] and all(i["origin"] == "curated" for i in plan["items"]) and plan["live_sources"] == []
     finally:
         object.__setattr__(settings, "learning_mslearn", False); object.__setattr__(settings, "youtube_api_key", "")
+
+
+# ---------- semantic matching through an embedding API (fake server) ----------
+_TOPICS = [("data", "analyst", "sql", "power bi", "dashboard", "statistics"),
+           ("security", "cyber", "siem", "incident", "vulnerab", "threat"),
+           ("software", "developer", "react", "api", "javascript", "backend"),
+           ("cloud", "aws", "azure", "devops", "kubernetes", "infrastructure")]
+
+
+def _fake_vector(text: str) -> list[float]:
+    t = text.lower()
+    return [0.3] + [sum(t.count(w) for w in topic) for topic in _TOPICS]  # shared base keeps unrelated cosine > 0
+
+
+def _fake_embeddings(calls):
+    def handler(request):
+        body = json.loads(request.content)
+        calls.append(len(body["input"]))
+        return httpx.Response(200, json={"data": [{"index": i, "embedding": _fake_vector(t)} for i, t in enumerate(body["input"])]})
+    return handler
+
+
+@pytest.fixture
+def embedding_api(client, tmp_path, monkeypatch):
+    import app.semantic as sem
+    from app.config import settings
+    monkeypatch.setattr(sem, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(sem, "_cv_cache", sem.OrderedDict())
+    object.__setattr__(settings, "embedding_provider", "api"); object.__setattr__(settings, "embedding_api_key", "k")
+    object.__setattr__(settings, "embedding_model", f"fake-{tmp_path.name}")  # fresh stored vectors per test
+    yield sem
+    object.__setattr__(settings, "embedding_provider", "local"); object.__setattr__(settings, "embedding_api_key", "")
+
+
+def test_semantic_scores_use_embedding_api_with_calibration(embedding_api):
+    from sqlalchemy import select
+    from app.db import SessionLocal
+    from app.models import Job
+    sem, calls = embedding_api, []
+    transport = httpx.MockTransport(_fake_embeddings(calls))
+    with SessionLocal() as db:
+        jobs = list(db.scalars(select(Job).where(Job.source == "seed-dataset")))
+        cv = "Data analyst: SQL, Power BI dashboards, statistics for reporting."
+        scores, info = sem.semantic_scores(db, cv, jobs, transport=transport)
+        assert info["engine"].startswith("fake-") and info["calibration"]["floor"] < info["calibration"]["ceiling"]
+        assert all(0 <= v <= 1 for v in scores.values())
+        by_role = lambda r: max(scores[j.id] for j in jobs if j.role_category == r)
+        assert by_role("data_analyst") > by_role("cybersecurity_analyst")
+        n_after_first = len(calls)
+        sem.semantic_scores(db, cv, jobs, transport=transport)
+        assert len(calls) == n_after_first  # job vectors stored, CV vector cached, calibration saved
+
+
+def test_semantic_falls_back_to_local_when_api_fails(embedding_api):
+    from sqlalchemy import select
+    from app.db import SessionLocal
+    from app.models import Job
+    sem = embedding_api
+    with SessionLocal() as db:
+        jobs = list(db.scalars(select(Job).where(Job.source == "seed-dataset")))[:5]
+        scores, info = sem.semantic_scores(db, "data analyst", jobs, transport=httpx.MockTransport(lambda r: httpx.Response(500)))
+        assert info["engine"] == sem.LOCAL_ENGINE and info["fallback_reason"] == "HTTP 500" and len(scores) == 5

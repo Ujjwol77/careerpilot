@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from .agents.cv_agent import optimise_cv
 from .agents.interview_agent import preparation_plan
 from .agents.job_match_agent import match_jobs, profile_text
+from .semantic import LOCAL_ENGINE, semantic_scores
 from .agents.job_search_agent import search_jobs, describe_sources, reset_source_status
 from .agents.learning_agent import build_plan
 from .agents.report_agent import build_report
@@ -48,11 +49,19 @@ def search_and_match(db: Session, user: User, profile: Profile, ctx: dict, trace
         step["llm_source"], sources_note = describe_sources(jobs)
         step["note"] += f" ({sources_note})"
     with tracked(db, user.id, "job_matching", trace) as step:
-        matches = match_jobs(ctx["skills"], ctx["text"], ctx["years"], jobs, limit=limit)
+        sem, info = semantic_scores(db, ctx["text"], jobs)
+        matches = match_jobs(ctx["skills"], ctx["text"], ctx["years"], jobs, limit=limit, semantic=sem, semantic_engine=info["engine"])
         step["note"] = f"ranked {len(jobs)} postings"
         if not matches or matches[0]["score"] < MIN_TOP_SCORE:
-            matches = match_jobs(ctx["skills"], ctx["text"], ctx["years"], search_jobs(db), limit=limit)
+            all_jobs = search_jobs(db)
+            sem, info = semantic_scores(db, ctx["text"], all_jobs)
+            matches = match_jobs(ctx["skills"], ctx["text"], ctx["years"], all_jobs, limit=limit, semantic=sem, semantic_engine=info["engine"])
             step["note"] += "; reflected: widened to all roles"
+        if info["engine"] != LOCAL_ENGINE:
+            step["llm_source"] = "embeddings"
+            step["note"] += f"; semantic: {info['engine']} embeddings"
+        else:
+            step["note"] += f"; semantic: local word overlap ({info.get('fallback_reason') or 'fallback'})"
     return matches
 
 

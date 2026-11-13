@@ -101,7 +101,7 @@ function Matches() {
                     {m.missing_skills.length > 0 && <p><strong>Missing:</strong> {m.missing_skills.join(", ")}</p>}
                   </div>
                   <StackBar ariaLabel={`How the score for ${m.title} is made up`} parts={[
-                    { label: "Meaning match", value: m.components.semantic * 35, color: "var(--s1)", note: `${Math.round(m.components.semantic * 100)}% similar to your CV, worth up to 35` },
+                    { label: "Meaning match", value: m.components.semantic * 35, color: "var(--s1)", note: `${Math.round(m.components.semantic * 100)}% similar in meaning to your CV (${engineLabel(m.semantic_engine)}), worth up to 35` },
                     { label: "Skill coverage", value: m.components.skill_coverage * 50, color: "var(--s2)", note: `${Math.round(m.components.skill_coverage * 100)}% of required skills, worth up to 50` },
                     { label: "Experience fit", value: m.components.experience_fit * 15, color: "var(--s3)", note: `${Math.round(m.components.experience_fit * 100)}% fit, worth up to 15` },
                   ]} />
@@ -189,4 +189,10 @@ function SourceNote({ items }: { items: { source?: string }[] }) {
 /** Shows at a glance whether a posting is a live Adzuna advert or one of the sample jobs. */
 function SourceBadge({ source }: { source?: string }) {
   return source === "adzuna" ? <Pill tone="good">Live · Adzuna</Pill> : <Pill tone="neutral">Sample job</Pill>;
+}
+
+/** Which method measured the "meaning" part of the score (see backend/app/semantic.py). */
+function engineLabel(engine?: string) {
+  if (!engine || engine === "local word overlap") return "word overlap, AI embeddings unavailable";
+  return engine.startsWith("gemini") ? "Gemini AI embeddings" : `${engine} embeddings`;
 }

@@ -30,6 +30,13 @@ class Settings:
     llm_model: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
     # Live learning resources. Microsoft Learn needs no key; YouTube needs a free Data API key.
+    # Semantic matching: a neural embedding model through an OpenAI-compatible /embeddings endpoint.
+    # "api" uses it (defaults to the LLM's key and URL, e.g. Gemini); "local" uses word overlap only.
+    embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "api")
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
+    embedding_api_key: str = os.getenv("EMBEDDING_API_KEY", os.getenv("LLM_API_KEY", ""))
+    embedding_base_url: str = os.getenv("EMBEDDING_BASE_URL", os.getenv("LLM_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/"))
+
     learning_mslearn: bool = os.getenv("LEARNING_MSLEARN", "true").lower() in ("1", "true", "yes")
     youtube_api_key: str = os.getenv("YOUTUBE_API_KEY", "")
     learning_cache_days: int = int(os.getenv("LEARNING_CACHE_DAYS", "7"))

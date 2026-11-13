@@ -80,6 +80,16 @@ class Job(Base):
     external_id: Mapped[str] = mapped_column(String(80), default="", index=True)  # provider's job id
 
 
+class JobEmbedding(Base):
+    """A job advert's vector from a hosted embedding model; stored so each advert is embedded once per model."""
+    __tablename__ = "job_embeddings"
+    __table_args__ = (UniqueConstraint("job_id", "model"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), index=True)
+    model: Mapped[str] = mapped_column(String(80))
+    vector: Mapped[list] = mapped_column(JSON)
+
+
 class JobQueryCache(Base):
     """Remembers when a live search last ran, so repeat searches reuse saved jobs instead of the API."""
     __tablename__ = "job_query_cache"

@@ -10,7 +10,7 @@ const pts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
 const COMPONENTS = [
   { key: "skill_coverage", label: "Skills the advert asks for that your CV shows" },
-  { key: "semantic", label: "How closely your CV's wording matches the advert" },
+  { key: "semantic", label: "How closely your CV's meaning matches the advert" },
   { key: "experience_fit", label: "Your years of experience vs the role's level" },
 ] as const;
 
@@ -77,6 +77,11 @@ export default function CvPage() {
                 <tr className="cv-total"><td colSpan={3}>Match score</td><td>{pts(reason.score)}</td></tr>
               </tbody>
             </table>
+            <p className="small muted">
+              {reason.semantic_engine && reason.semantic_engine !== "local word overlap"
+                ? `Meaning is measured by an AI embedding model (${reason.semantic_engine}), which compares what your CV and the advert are about, not just shared words.`
+                : "Meaning is measured by word overlap because the AI embedding model is unavailable; this is less accurate."}
+            </p>
             {reason.missing_skills.length > 0 && (
               <p className="small muted">Skills from this advert not found in your CV: {reason.missing_skills.join(", ")}.</p>
             )}

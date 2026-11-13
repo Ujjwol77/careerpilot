@@ -80,4 +80,4 @@ export const money = (n: number) => `$${Math.round(n / 1000)}k`;
 
 /** Human label for an agent run's llm_source (see backend/app/tracking.py). */
 export const sourceLabel = (src?: string) =>
-  ({ rules: "Rules (calculation)", llm: "LLM", template: "Template (no LLM set)", "template-fallback": "Template (LLM failed)", adzuna: "Adzuna API (live)", "adzuna+sample": "Adzuna + sample jobs", "sample-data": "Sample jobs (fallback)" } as Record<string, string>)[src ?? ""] ?? (src || "-");
+  ({ rules: "Rules (calculation)", llm: "LLM", template: "Template (no LLM set)", "template-fallback": "Template (LLM failed)", embeddings: "Embedding API", adzuna: "Adzuna API (live)", "adzuna+sample": "Adzuna + sample jobs", "sample-data": "Sample jobs (fallback)" } as Record<string, string>)[src ?? ""] ?? (src || "-");
