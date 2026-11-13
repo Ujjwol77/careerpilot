@@ -203,6 +203,21 @@ tbody tr:hover td { background: color-mix(in srgb, var(--brand) 7%, transparent)
   .lift:hover, .btn:hover, .nav a:hover, .pill:hover, .ring:hover { transform: none; }
 }
 
+/* ===== collapsible sidebar: click the logo to hide the menu and keep only the logo ===== */
+.brand-btn { background: none; border: 0; width: 100%; cursor: pointer; font: inherit; font-weight: 700; font-size: 18px; text-align: left; border-radius: 10px; }
+.brand-btn:hover img { filter: brightness(1.15); }
+.brand-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.shell { transition: grid-template-columns .22s ease; }
+.shell.collapsed { grid-template-columns: 72px 1fr; }
+.shell.collapsed .sidebar { padding: 20px 10px; overflow: hidden; }
+.shell.collapsed .brand { justify-content: center; padding: 4px 0 18px; }
+.shell.collapsed .brand-name, .shell.collapsed .nav, .shell.collapsed .userbox { display: none; }
+@media (max-width: 860px) {
+  .shell.collapsed { grid-template-columns: 1fr; }
+  .shell.collapsed .sidebar { padding: 10px; }
+  .shell.collapsed .brand { justify-content: flex-start; padding: 4px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .shell { transition: none; } }
 /* sidebar account menu (components/UserMenu.tsx) */
 .usermenu { position: relative; }
 .usermenu-trigger { display: flex; align-items: center; gap: 10px; padding: 8px; margin: -8px; width: calc(100% + 16px); background: transparent; border: 0; border-radius: 10px; color: var(--nav-ink); font: inherit; text-align: left; cursor: pointer; }

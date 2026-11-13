@@ -13,7 +13,7 @@ from ..data.seed_jobs import ROLE_PROFILES
 from ..db import get_db
 from ..deps import error, get_current_user, require_profile
 from ..models import InterviewSession, Job, Profile, User
-from ..orchestrator import load_context, search_and_match, top_job_objects
+from ..orchestrator import benchmark_jobs, load_context, search_and_match, top_job_objects
 from ..schemas import InterviewAnswerIn, InterviewStartIn
 from ..tracking import tracked
 
@@ -30,8 +30,9 @@ def _context(db: Session, user: User, profile: Profile):
 def skill_gap(user: User = Depends(get_current_user), profile: Profile = Depends(require_profile), db: Session = Depends(get_db)):
     ctx, matches, jobs = _context(db, user, profile)
     with tracked(db, user.id, "skill_gap") as step:
-        result = analyse_gaps(ctx["skills"], jobs, ctx["years"])
-        step["note"] = f"{len(result['missing'])} gaps"
+        pool, role_label = benchmark_jobs(db, ctx, matches)
+        result = analyse_gaps(ctx["skills"], pool, ctx["years"], role_label)
+        step["note"] = f"{len(result['missing'])} gaps across {len(pool)} {role_label} postings"
     return result
 
 
@@ -72,7 +73,8 @@ def explain_target(target: Job | None, matches: list[dict], ctx: dict, chosen: b
 @router.get("/learning")
 def learning(user: User = Depends(get_current_user), profile: Profile = Depends(require_profile), db: Session = Depends(get_db)):
     ctx, matches, jobs = _context(db, user, profile)
-    gaps = analyse_gaps(ctx["skills"], jobs, ctx["years"])
+    pool, role_label = benchmark_jobs(db, ctx, matches)
+    gaps = analyse_gaps(ctx["skills"], pool, ctx["years"], role_label)
     with tracked(db, user.id, "learning_pathway") as step:
         plan = build_plan(gaps["missing"])
         step["note"] = f"{len(plan['items'])} courses"
@@ -85,7 +87,8 @@ def interview_start(body: InterviewStartIn, user: User = Depends(get_current_use
     role = body.role or (matches[0]["role_category"] if matches else ctx["roles"][0])
     if role not in ROLE_PROFILES:
         raise error(422, "UNKNOWN_ROLE", "Unknown role.")
-    gaps = analyse_gaps(ctx["skills"], jobs, ctx["years"])
+    pool, role_label = benchmark_jobs(db, ctx, matches)
+    gaps = analyse_gaps(ctx["skills"], pool, ctx["years"], role_label)
     with tracked(db, user.id, "interview_coach") as step:
         questions = build_questions(role, [m["slug"] for m in gaps["missing"]], sorted(ctx["skills"]))
         session = InterviewSession(user_id=user.id, role=role, questions=questions, answers=[])
