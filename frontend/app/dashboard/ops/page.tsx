@@ -1,7 +1,6 @@
 "use client";
 import { useApi } from "@/lib/api";
 import { Card, ErrorBox, Loading, PageHeader, Pill, sourceLabel } from "@/components/ui";
-import { HBarChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -67,22 +66,6 @@ export default function OpsPage() {
             ))}</tbody>
           </table>
         </Card>
-      )}
-      {summary.data?.agents.length > 0 && (
-        <div className="grid grid-2">
-          <Card title="Runs per agent">
-            <HBarChart ariaLabel="Number of runs per agent" max={Math.max(...summary.data.agents.map((a: any) => a.runs), 1)} rows={summary.data.agents.map((a: any) => ({
-              label: a.agent.replaceAll("_", " "), value: a.runs, display: String(a.runs),
-              tip: <><strong>{a.agent.replaceAll("_", " ")}</strong><br />{a.runs} runs · {a.errors} errors</>,
-            }))} />
-          </Card>
-          <Card title="Average latency (ms)">
-            <HBarChart ariaLabel="Average latency per agent in milliseconds" max={Math.max(...summary.data.agents.map((a: any) => a.avg_ms), 1)} rows={summary.data.agents.map((a: any) => ({
-              label: a.agent.replaceAll("_", " "), value: a.avg_ms, display: `${a.avg_ms} ms`, color: "var(--s2)",
-              tip: <><strong>{a.agent.replaceAll("_", " ")}</strong><br />{a.avg_ms} ms on average</>,
-            }))} />
-          </Card>
-        </div>
       )}
       <Card title="Recent runs">
         {runs.data?.length ? (
