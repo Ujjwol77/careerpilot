@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ApiError } from "@/lib/api";
+import { InfoTip } from "@/components/InfoTip";
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
@@ -14,10 +15,10 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   );
 }
 
-export function Card({ title, children, className = "" }: { title?: string; children: ReactNode; className?: string }) {
+export function Card({ title, info, children, className = "" }: { title?: string; info?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={`card ${className}`}>
-      {title && <h2>{title}</h2>}
+      {title && <h2>{title}{info && <> <InfoTip label={`About ${title}`}>{info}</InfoTip></>}</h2>}
       {children}
     </section>
   );

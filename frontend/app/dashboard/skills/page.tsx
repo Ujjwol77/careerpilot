@@ -1,6 +1,7 @@
 "use client";
 import { useApi } from "@/lib/api";
 import { Card, Loading, NeedCv, PageHeader, Pill } from "@/components/ui";
+import { InfoTip } from "@/components/InfoTip";
 import { HBarChart, Kpi, Legend, Radar } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -30,7 +31,7 @@ export default function SkillsPage() {
       </Card>
 
       <div className="grid grid-2">
-        <Card title="How much of each skill type you cover">
+        <Card title="How much of each skill type you cover" info="Each skill counts by how often postings ask for it, so missing a skill everyone wants costs more than missing a rare one.">
           {d.coverage.length >= 3 ? (
             <Radar ariaLabel="Share of the demand in each skill type that you already cover" axes={d.coverage.map((c: any) => ({
               label: c.label, value: c.coverage_pct,
@@ -42,7 +43,6 @@ export default function SkillsPage() {
               tip: <><strong>{c.label}</strong><br />You have {c.have} of the {c.wanted} skills asked for</>,
             }))} />
           ) : <p className="muted">No skill demand found yet.</p>}
-          <p className="muted small">Each skill counts by how often postings ask for it, so missing a skill everyone wants costs more than missing a rare one.</p>
         </Card>
         <Card title="Experience">
           <p>{d.experience.advice}</p>
@@ -55,11 +55,10 @@ export default function SkillsPage() {
         </Card>
       </div>
 
-      <Card title="Gaps to close, in the order to tackle them">
+      <Card title="Gaps to close, in the order to tackle them" info="Priority comes from demand and skill type, and goes up one level when closing a skill completes your list for 2 or more postings.">
         {d.missing.length === 0 ? <p className="muted">No gaps found against these postings.</p> : (
           <>
             <Legend items={[{ label: "High priority", color: "var(--bad)" }, { label: "Medium", color: "var(--warn)" }, { label: "Low", color: "var(--s1)" }]} />
-            <p className="muted small">Priority comes from demand and skill type, and goes up one level when closing a skill completes your list for 2 or more postings.</p>
             {d.missing.slice(0, 12).map((s: any) => (
               <div className="job" key={s.slug}>
                 <div className="job-body">
@@ -69,11 +68,11 @@ export default function SkillsPage() {
                       <Pill tone={s.priority === "high" ? "bad" : s.priority === "medium" ? "warn" : "neutral"}>{s.priority} priority</Pill>{" "}
                       <Pill>{TIER[s.tier]}</Pill>
                       {s.quick_win && <Pill tone="good">quick win</Pill>}
+                      <InfoTip label={`Why ${s.skill} is a gap`}>{s.why}</InfoTip>
                     </div>
                   </div>
                   <HBarChart ariaLabel={`${s.skill} demand`} max={100} rows={[{ label: "Demand", value: s.demand_pct, display: `${s.demand_pct}%`, color: color(s.priority),
                     tip: <><strong>{s.skill}</strong><br />Asked for by {s.jobs_asking} of {d.jobs_analysed} postings</> }]} />
-                  <p className="small muted" style={{ margin: "4px 0 0" }}>{s.why}</p>
                 </div>
               </div>
             ))}
@@ -91,11 +90,10 @@ export default function SkillsPage() {
             }))} />
           )}
         </Card>
-        <Card title="Other skills you have">
+        <Card title="Other skills you have" info="Not asked for in these postings, but they can set you apart. Mention them if they are relevant to the job.">
           {d.extras.length === 0 ? <p className="muted">Every skill on your CV is asked for by this role.</p> : (
             <>
               <div>{d.extras.map((s: string) => <Pill key={s}>{s}</Pill>)}</div>
-              <p className="muted small">Not asked for in these postings, but they can set you apart. Mention them if they are relevant to the job.</p>
             </>
           )}
         </Card>

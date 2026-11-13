@@ -263,3 +263,30 @@ tbody tr:hover td { background: color-mix(in srgb, var(--brand) 7%, transparent)
 .usermenu-item:hover { background: var(--brand-soft); }
 .usermenu-logout { color: var(--bad); border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; margin-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .usermenu-panel { animation: none; } }
+
+/* ===== "i" info tips (components/InfoTip.tsx) ===== */
+.infotip { position: relative; display: inline-flex; vertical-align: middle; margin-left: 4px; }
+.infotip-btn { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--muted); background: transparent; color: var(--muted); font: italic 700 11px/1 Georgia, "Times New Roman", serif; display: grid; place-items: center; padding: 0; cursor: pointer; }
+.infotip-btn:hover, .infotip.open .infotip-btn { border-color: var(--brand); color: var(--brand); }
+.infotip-bubble { position: absolute; top: calc(100% + 8px); left: -8px; z-index: 25; width: max-content; max-width: min(280px, 80vw); padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--card); font-size: 13px; font-weight: 400; font-style: normal; line-height: 1.45; text-transform: none; letter-spacing: normal; white-space: normal; box-shadow: 0 8px 24px rgba(8, 18, 32, .22); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s; pointer-events: none; }
+.infotip.right .infotip-bubble { left: auto; right: -8px; }
+.infotip:hover .infotip-bubble, .infotip-btn:focus-visible + .infotip-bubble, .infotip.open .infotip-bubble { opacity: 1; visibility: visible; transform: none; transition: opacity .15s ease, transform .15s ease; }
+.infotip.dismissed .infotip-bubble { opacity: 0; visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .infotip-bubble { transition: none; } }
+
+/* ===== learning path: one card per course, grouped by skill gap ===== */
+.course-group { margin-bottom: 24px; }
+.course-group > h2 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 17px; margin: 0 0 12px; }
+.course-group > h2 .pill { margin: 0; }
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.course-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; transition: border-color .18s ease, transform .18s ease; }
+.course-card:hover { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); transform: translateY(-2px); }
+.course-card h3 { font-size: 16px; line-height: 1.35; margin: 2px 0 0; }
+.course-card h3 a { color: var(--ink); text-decoration: none; }
+.course-card h3 a:hover { color: var(--brand); text-decoration: underline; }
+.course-tags .pill { margin-bottom: 0; }
+.course-provider { color: var(--muted); font-size: 14px; margin: 0; }
+.course-for { color: var(--muted); margin: 2px 0 0; flex: 1; }
+.course-meta { display: flex; align-items: center; gap: 14px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+.course-meta .btn { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { .course-card, .course-card:hover { transition: none; transform: none; } }
