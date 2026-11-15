@@ -2,9 +2,43 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ApiError, useApi } from "@/lib/api";
 import { Card, ErrorBox, Loading, PageHeader, Pill } from "@/components/ui";
+import { InfoTip } from "@/components/InfoTip";
 
 const MAX_MB = 5;
 const OK_EXT = [".pdf", ".docx"];
+
+type YearsDetail = { years: number; source: "stated" | "dates" | "none"; stated: number | null; from_dates: number };
+
+type RoleFit = { role: string; label: string; score: number; core_have: number; core_total: number; extra_have: number; extra_total: number; core_missing: string[] };
+
+/** The working behind "roles that fit": each role's score from the skills found in the CV. */
+function RoleFitNote({ fit }: { fit: RoleFit[] }) {
+  const shown = fit.filter((r) => r.score > 0).slice(0, 3);
+  return (
+    <>
+      Each role is scored on the skills found in your CV, not by the AI model: the role&apos;s core skills count for 70% and its useful extras for 30%.
+      {shown.map((r) => (
+        <span key={r.role} style={{ display: "block", marginTop: 6 }}>
+          <strong>{r.label} {r.score}%</strong>: {r.core_have} of {r.core_total} core skills, {r.extra_have} of {r.extra_total} extras.
+          {r.core_missing.length > 0 && <> Missing core: {r.core_missing.join(", ")}.</>}
+        </span>
+      ))}
+      <span style={{ display: "block", marginTop: 6 }}>Skills such as Communication or Python count for more than one role, so a CV can fit several.</span>
+    </>
+  );
+}
+
+/** Where the years-of-experience figure came from, in plain words. */
+function yearsNote(d: YearsDetail, shown: number) {
+  const note = d.source === "stated"
+    ? (d.from_dates && d.from_dates !== d.stated
+      ? `Taken from your CV summary ("${d.stated} years"). Your job dates add up to ${d.from_dates} years; the figure you state is used because dates can't show part-time work or gaps.`
+      : "Taken from your CV summary, and it matches your job dates.")
+    : d.source === "dates"
+      ? "Added up from the dates of the jobs in your Experience section, counting months and merging any overlaps."
+      : "No experience figure or job dates were found in your CV. Add dates such as \"Jan 2024 – May 2025\" to each role.";
+  return shown !== d.years ? `${note} Upload your CV again to update the number shown.` : note;
+}
 
 export default function ProfilePage() {
   const profile = useApi("/profile");
@@ -102,14 +136,14 @@ export default function ProfilePage() {
             <p className="muted small">Current file: {p.cv?.filename}</p>
             <p>{p.summary}</p>
             <div className="grid grid-3">
-              <div><strong>{p.years_experience}</strong><p className="muted small">years of experience</p></div>
+              <div><strong>{p.years_experience}</strong><p className="muted small">years of experience{p.years_detail && <> <InfoTip label="How years of experience were worked out">{yearsNote(p.years_detail, p.years_experience)}</InfoTip></>}</p></div>
               <div><strong>{(() => {
                 const top = (p.inferred_roles as ({ label?: string; role?: string; score?: number } | string)[])
                   .map((r) => typeof r === "string" ? { label: r.replaceAll("_", " "), score: undefined } : { label: r.label ?? r.role?.replaceAll("_", " ") ?? "", score: r.score })
                   .filter((r) => r.label && (r.score === undefined || r.score > 0))
                   .slice(0, 3);
                 return top.length ? top.map((r) => r.score === undefined ? r.label : `${r.label} (${r.score}%)`).join(", ") : "-";
-              })()}</strong><p className="muted small">roles that fit</p></div>
+              })()}</strong><p className="muted small">roles that fit{p.role_fit?.length > 0 && <> <InfoTip label="How roles that fit are scored"><RoleFitNote fit={p.role_fit} /></InfoTip></>}</p></div>
               <div><strong>{p.skills.length}</strong><p className="muted small">skills detected</p></div>
             </div>
             <h3>Skills</h3>

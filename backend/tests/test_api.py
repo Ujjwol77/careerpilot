@@ -68,6 +68,54 @@ def test_upload_docx_and_pdf_extract_profile(client, user):
     assert {"SQL", "Excel", "Power BI"} <= names
 
 
+def _docx(text):
+    import docx
+    d, buf = docx.Document(), io.BytesIO()
+    for line in text.splitlines():
+        d.add_paragraph(line)
+    d.save(buf)
+    return buf.getvalue()
+
+
+_REPORT = """NIT3171 Individual Report
+Table of Contents
+1. Introduction
+This report examines data cleaning and data visualisation in ICT projects (Smith, 2021).
+2. Literature Review
+Earlier studies agree (Brown et al., 2019; Nguyen, 2022).
+3. Methodology
+4. Discussion
+5. Conclusion
+References
+Smith, J. (2021). Data quality. Journal of IT."""
+
+
+def test_rejects_document_that_is_not_a_cv_and_keeps_profile(client, uploaded):
+    headers, before = uploaded
+    r = _upload(client, headers, "report.docx", _docx(_REPORT), overwrite="true")
+    assert r.status_code == 422 and r.json()["error"]["code"] == "NOT_A_CV"
+    assert "report headings" in r.json()["error"]["message"]
+    assert client.get(f"{API}/profile", headers=headers).json()["summary"] == before["summary"]  # unchanged
+
+
+def test_cv_check_tells_cvs_from_other_documents():
+    from app.agents.profile_agent import cv_check
+    cv = "Sam Lee\nsam@example.com\nJunior Developer, Acme  Mar 2024 - Present\n- Built React, TypeScript, Python, SQL, Git and Docker features"
+    assert cv_check(cv)["is_cv"]                                  # sparse CV with no headings still passes
+    letter = "Jane Doe\njane@example.com\nDear Hiring Manager,\nI am applying for the Data Analyst role (2023 - Present)."
+    advert = "About the role\nWe need SQL, Python and Power BI.\nResponsibilities\n- Dashboards\nRequirements\n- 2 years\nHow to apply"
+    assert not cv_check(letter)["is_cv"] and not cv_check(advert)["is_cv"] and not cv_check(_REPORT)["is_cv"]
+
+
+def test_role_fit_detail_explains_scores(uploaded):
+    _, profile = uploaded
+    fit = profile["role_fit"]
+    top = fit[0]
+    assert top["role"] == "data_analyst" and top["score"] == profile["inferred_roles"][0]["score"]
+    expected = round(100 * (0.7 * top["core_have"] / top["core_total"] + 0.3 * top["extra_have"] / top["extra_total"]))
+    assert top["score"] == expected and len(top["core_missing"]) == top["core_total"] - top["core_have"]
+
+
 def test_docx_profile_content(uploaded):
     _, profile = uploaded
     assert profile["name"]
@@ -239,6 +287,19 @@ def test_years_estimate_merges_overlap():
     from app.agents.profile_agent import estimate_years
     assert estimate_years("2018 - 2021 and 2020 - 2022", today_year=2026) == 4
     assert estimate_years("2022 - Present", today_year=2026) == 4
+
+
+def test_years_from_month_ranges_and_stated_figure():
+    from app.agents.profile_agent import estimate_years, experience_years
+    # month-year ranges used to be ignored, so this CV showed 0 years
+    jobs = "Intern  Jun 2025 – Dec 2025\nSupport officer  Jan 2024 – May 2025"
+    assert estimate_years(jobs, today_year=2026, today_month=11) == 2.0          # 7 + 17 months
+    assert estimate_years("06/2025 - Present", today_year=2026, today_month=11) == 1.5          # Jun 2025 to Nov 2026 = 18 months
+    cv = "Summary\nGraduate analyst with 1.5 years of hands-on experience.\nExperience\n" + jobs
+    y = experience_years(cv)
+    assert y["years"] == 1.5 and y["source"] == "stated" and y["from_dates"] == 2.0
+    y = experience_years("Summary\nRecent graduate.\nExperience\n" + jobs)
+    assert y["years"] == 2.0 and y["source"] == "dates"
 
 
 def test_redaction():

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
-from ..agents.profile_agent import analyse_cv
+from ..agents.profile_agent import analyse_cv, cv_check, experience_years, role_fit_detail
 from ..config import settings
 from ..cv_extract import validate_and_extract
 from ..data.seed_jobs import ROLE_PROFILES
@@ -23,9 +23,11 @@ def _profile_out(db: Session, user: User, profile: Profile) -> dict:
         "name": user.name or profile.name_guess,
         "summary": profile.summary,
         "years_experience": profile.years_experience,
+        "years_detail": experience_years(cv.text) if cv else None,
         "education": profile.education,
         "experience": profile.experience,
         "inferred_roles": profile.inferred_roles,
+        "role_fit": role_fit_detail({s.slug for s in skills}),
         "skills": [{"slug": s.slug, "name": s.name, "category": s.category} for s in skills],
         "cv": {"filename": cv.filename, "size_bytes": cv.size_bytes, "uploaded_at": cv.created_at.isoformat()} if cv else None,
         "preferences": {
@@ -57,13 +59,21 @@ def update_preferences(body: PreferencesIn, user: User = Depends(get_current_use
 def upload_cv(overwrite: bool = False, file: UploadFile = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     data = file.file.read(settings.max_upload_mb * 1024 * 1024 + 1)
     text = validate_and_extract(file.filename or "", data)      # 413 / 415 / 422 on failure
+    check = cv_check(text)                                       # checked before anything is replaced
+    if not check["is_cv"]:
+        reasons = check["against"] + check["missing"]
+        raise error(422, "NOT_A_CV", "This file doesn't look like a CV, so your profile was not changed: "
+                    + "; ".join(reasons[:3]) + ". Upload your CV or résumé instead.")
     existing = db.get(Profile, user.id)
     if existing and not overwrite:
         raise error(409, "PROFILE_EXISTS", "You already have a profile. Confirm to overwrite it with this CV.")
 
     with tracked(db, user.id, "profile_understanding") as step:
         parsed = analyse_cv(text)
-        step["note"] = f"{len(parsed['skills'])} skills, {parsed['years_experience']:g} years"
+        yd = parsed["years_detail"]
+        step["note"] = (f"{len(parsed['skills'])} skills, {yd['years']:g} years "
+                        + ("(stated in CV" + (f"; job dates add up to {yd['from_dates']:g})" if yd["from_dates"] != yd["years"] else ")")
+                           if yd["source"] == "stated" else "(from job dates)"))
         db.execute(update(CVDocument).where(CVDocument.user_id == user.id).values(is_active=False))
         db.add(CVDocument(user_id=user.id, filename=(file.filename or "cv")[:255], mime_type=file.content_type or "", size_bytes=len(data), text=text))
         profile = existing or Profile(user_id=user.id)

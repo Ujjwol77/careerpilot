@@ -269,7 +269,6 @@ tbody tr:hover td { background: color-mix(in srgb, var(--brand) 7%, transparent)
 .infotip-btn { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--muted); background: transparent; color: var(--muted); font: italic 700 11px/1 Georgia, "Times New Roman", serif; display: grid; place-items: center; padding: 0; cursor: pointer; }
 .infotip-btn:hover, .infotip.open .infotip-btn { border-color: var(--brand); color: var(--brand); }
 .infotip-bubble { position: absolute; top: calc(100% + 8px); left: -8px; z-index: 25; width: max-content; max-width: min(280px, 80vw); padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--card); font-size: 13px; font-weight: 400; font-style: normal; line-height: 1.45; text-transform: none; letter-spacing: normal; white-space: normal; box-shadow: 0 8px 24px rgba(8, 18, 32, .22); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s; pointer-events: none; }
-.infotip.right .infotip-bubble { left: auto; right: -8px; }
 .infotip:hover .infotip-bubble, .infotip-btn:focus-visible + .infotip-bubble, .infotip.open .infotip-bubble { opacity: 1; visibility: visible; transform: none; transition: opacity .15s ease, transform .15s ease; }
 .infotip.dismissed .infotip-bubble { opacity: 0; visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .infotip-bubble { transition: none; } }
