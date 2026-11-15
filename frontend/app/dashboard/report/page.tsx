@@ -5,16 +5,34 @@ import { Card, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone
 import { HBarChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+/** Saved reports keep the shape they were generated with. Older ones stored the learning plan as
+ *  `learning.weeks[].items` instead of `learning.items`, so fill in defaults before rendering. */
+function normaliseReport(raw: any): any {
+  if (!raw) return raw;
+  const learning = raw.learning ?? {};
+  const items = learning.items ?? (learning.weeks ?? []).flatMap((w: any) => w.items ?? []);
+  return {
+    ...raw,
+    top_jobs: (raw.top_jobs ?? []).map((j: any) => ({ ...j, missing_skills: j.missing_skills ?? [] })),
+    skill_gaps: { ...raw.skill_gaps, missing: raw.skill_gaps?.missing ?? [], experience: raw.skill_gaps?.experience ?? {} },
+    cv: { ...raw.cv, suggestions: raw.cv?.suggestions ?? [] },
+    learning: { ...learning, items, focus_skills: learning.focus_skills ?? [] },
+    interview: { ...raw.interview, focus_areas: raw.interview?.focus_areas ?? [], schedule: raw.interview?.schedule ?? [], tips: raw.interview?.tips ?? [] },
+    agent_trace: raw.agent_trace ?? [],
+  };
+}
+
 export default function ReportPage() {
   const latest = useApi("/report/latest");
   const [r, setR] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
-  useEffect(() => { if (latest.data) setR(latest.data); }, [latest.data]);
+  useEffect(() => { if (latest.data) setR(normaliseReport(latest.data)); }, [latest.data]);
 
   async function generate() {
     setBusy(true); setError(null);
-    try { setR(await api("/report/generate", { body: {} })); }
+    try { setR(normaliseReport(await api("/report/generate", { body: {} }))); }
     catch (e) { setError(e instanceof ApiError ? e : null); }
     finally { setBusy(false); }
   }
