@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from ..agents.job_search_agent import search_jobs
+from ..data.seed_jobs import ROLE_PROFILES
 from ..db import get_db
 from ..deps import error, get_current_user, require_profile
 from ..models import AuditLog, Job, Profile, User
@@ -17,9 +18,13 @@ def _job_out(j: Job) -> dict:
 
 
 @router.get("/search")
-def search(q: str = "", role: str = "", location: str = "", min_salary: int = Query(0, ge=0), level: str = "",
+def search(q: str = "", role: str = "", field: str = "", location: str = "", min_salary: int = Query(0, ge=0), level: str = "",
            user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    jobs = search_jobs(db, keywords=q, role_categories=[role] if role else None, location=location, min_salary=min_salary, level=level)
+    # a role narrows to that role; a field alone means every role in that field
+    roles = [role] if role else [k for k, r in ROLE_PROFILES.items() if r["field"] == field] if field else None
+    if field and not roles:
+        raise error(422, "UNKNOWN_FIELD", "Unknown field.")
+    jobs = search_jobs(db, keywords=q, role_categories=roles, location=location, min_salary=min_salary, level=level)
     return {"count": len(jobs), "jobs": [_job_out(j) for j in jobs]}
 
 

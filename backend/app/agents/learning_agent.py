@@ -49,6 +49,7 @@ def build_plan(missing: list[dict], max_skills: int = 6) -> dict:
                 continue
             seen_urls.add(res["url"])
             items.append({**res, "skill_name": gap["skill"], "priority": gap["priority"],
+                          "priority_note": gap.get("notes", {}).get("priority", ""),
                           "suitable_for": suitable_for(res, gap["skill"], gap["category"])})
     return {
         "total_hours": sum(i["hours"] for i in items),

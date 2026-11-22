@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, inspect, select, text
+from sqlalchemy import inspect, select, text
 
 from .config import settings
 from .data.seed_jobs import build_seed_jobs
@@ -14,9 +14,12 @@ from .routers import analysis, applications, auth, jobs, ops, profile, report
 
 
 def seed_jobs() -> None:
+    """Add the sample postings for every role that has none yet, so roles added later also reach existing databases."""
     with SessionLocal() as db:
-        if db.scalar(select(func.count()).select_from(Job)) == 0:
-            db.add_all(Job(**j) for j in build_seed_jobs())
+        have = set(db.scalars(select(Job.role_category).where(Job.source == "seed-dataset").distinct()))
+        new = [j for j in build_seed_jobs() if j["role_category"] not in have]
+        if new:
+            db.add_all(Job(**j) for j in new)
             db.commit()
 
 

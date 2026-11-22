@@ -46,6 +46,24 @@ _FAMILIES = [
 FAMILIES = [{s for s in fam if s in SKILLS} for fam in _FAMILIES]
 
 
+KIND = {"technical": "technical skill", "tool": "tool", "soft": "soft skill", "certification": "certification"}
+
+
+def _notes(pct: int, cat: str, weighted: float, base: str, priority: str, unlocks: int, hours: int | None) -> dict:
+    """One-line reasons for the tags shown on each gap (priority, tier, quick win), from the same numbers."""
+    score = f"{pct}% demand × {IMPORTANCE[cat]:g} for a {KIND[cat]} = {weighted:g}"
+    bands = "50+ is high, 25–49 medium, under 25 low"
+    if priority != base:
+        why = f"{score}, which is {base}; raised to {priority} because it's the only skill missing for {unlocks} postings."
+    else:
+        why = f"{score} ({bands})."
+    tier = {"core": f"Asked for in {pct}% of postings: 60% or more makes it core for this role.",
+            "common": f"Asked for in {pct}% of postings: 30–59% makes it common for this role.",
+            "nice_to_have": f"Asked for in {pct}% of postings: under 30% makes it nice to have."}[_tier(pct)]
+    quick = f"A first course takes about {hours}h, and {QUICK_WIN_HOURS} hours or less counts as a quick win." if hours is not None else ""
+    return {"priority": why[0].upper() + why[1:], "tier": tier, "quick_win": quick}
+
+
 def _tier(pct: int) -> str:
     return "core" if pct >= TIER_CORE else "common" if pct >= TIER_COMMON else "nice_to_have"
 
@@ -85,7 +103,7 @@ def analyse_gaps(skills: set[str], jobs: list[Job], years: float, role_label: st
         pct = round(100 * count / n)
         cat = category(slug)
         weighted = pct * IMPORTANCE[cat]
-        priority = "high" if weighted >= 50 else "medium" if weighted >= 25 else "low"
+        priority = base = "high" if weighted >= 50 else "medium" if weighted >= 25 else "low"
         unlocks = only_missing[slug]
         boosted = unlocks >= 2 and priority != "high"
         if boosted:
@@ -103,7 +121,8 @@ def analyse_gaps(skills: set[str], jobs: list[Job], years: float, role_label: st
             "slug": slug, "skill": display(slug), "category": cat, "demand_pct": pct, "jobs_asking": count,
             "tier": _tier(pct), "priority": priority, "unlocks": unlocks, "adjacent": adjacent,
             "start_hours": hours, "quick_win": hours is not None and hours <= QUICK_WIN_HOURS,
-            "why": " ".join(why), "_impact": weighted + 8 * unlocks,
+            "why": " ".join(why), "notes": _notes(pct, cat, round(weighted, 1), base, priority, unlocks, hours),
+            "_impact": weighted + 8 * unlocks,
         })
     missing.sort(key=lambda m: (-PRIORITY_ORDER.index(m["priority"]), -m["_impact"], CATEGORY_ORDER.index(m["category"]), m["skill"]))
     for m in missing:

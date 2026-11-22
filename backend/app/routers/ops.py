@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .. import ats_parser
 from ..agents.job_search_agent import job_source_mode
 from ..config import settings
-from ..data.seed_jobs import ROLE_PROFILES
+from ..data.seed_jobs import ROLE_PROFILES, fields_with_roles
 from ..db import get_db
 from ..deps import get_current_user
 from ..llm import get_llm
@@ -62,7 +62,8 @@ def prompts(user: User = Depends(get_current_user)):
 @router.get("/meta")
 def meta():
     return {
-        "roles": [{"key": k, "label": v["label"]} for k, v in ROLE_PROFILES.items()],
+        "roles": [{"key": k, "label": v["label"], "field": v["field"]} for k, v in ROLE_PROFILES.items()],
+        "fields": fields_with_roles(),  # field -> roles, for the two-step pickers
         "levels": ["junior", "mid", "senior"],
         "statuses": ["saved", "applied", "interview", "offer", "rejected"],
     }

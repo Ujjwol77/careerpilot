@@ -66,7 +66,7 @@ def explain_target(target: Job | None, matches: list[dict], ctx: dict, chosen: b
         "weights": {"semantic": WEIGHTS["semantic"], "skill_coverage": WEIGHTS["coverage"], "experience_fit": WEIGHTS["experience"]},
         "matched_skills": m["matched_skills"], "missing_skills": m["missing_skills"],
         "runners_up": [{"job_id": r["job_id"], "title": r["title"], "company": r["company"], "score": r["score"]}
-                       for r in matches if r["job_id"] != target.id][:3],
+                       for r in matches if r["job_id"] != target.id][:5],
     }
 
 

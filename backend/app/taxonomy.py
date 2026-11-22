@@ -63,6 +63,26 @@ SKILLS: dict[str, Skill] = {
     "linux": _s("Linux", "technical", ["linux", "ubuntu", "bash", "shell scripting", "unix"]),
     "cicd": _s("CI/CD", "technical", ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "jenkins", "gitlab ci"]),
     "agile": _s("Agile / Scrum", "technical", ["agile", "scrum", "kanban", "sprint planning"]),
+    # added with the extra IT roles (Data & AI, Software, Cloud & Infrastructure, IT Support & Business)
+    "data_warehousing": _s("Data warehousing", "technical", ["data warehouse", "data warehouses", "data warehousing", "snowflake", "bigquery", "redshift", "azure synapse", "data lake", "lakehouse"]),
+    "data_modelling": _s("Data modelling", "technical", ["data modelling", "data modeling", "dimensional modelling", "dimensional modeling", "star schema", "dbt", "data models"]),
+    "spark": _s("Apache Spark", "technical", ["spark", "pyspark", "apache spark", "databricks"]),
+    "airflow": _s("Workflow orchestration (Airflow)", "technical", ["airflow", "apache airflow", "dagster", "prefect"]),
+    "deep_learning": _s("Deep learning", "technical", ["deep learning", "tensorflow", "pytorch", "keras", "neural network", "neural networks"]),
+    "nlp": _s("Natural language processing", "technical", ["natural language processing", "nlp", "text classification", "large language models", "llms", "llm"]),
+    "responsive_design": _s("Responsive design", "technical", ["responsive design", "responsive web design", "mobile-first", "css grid", "flexbox", "media queries"]),
+    "accessibility": _s("Web accessibility (WCAG)", "technical", ["accessibility", "wcag", "a11y", "screen reader", "screen readers"]),
+    "manual_testing": _s("Manual testing", "technical", ["manual testing", "test cases", "test plans", "test planning", "regression testing", "user acceptance testing", "uat", "exploratory testing", "functional testing"]),
+    "test_automation": _s("Test automation", "technical", ["test automation", "automation testing", "selenium", "cypress", "playwright", "webdriver", "appium"]),
+    "api_testing": _s("API testing", "technical", ["api testing", "postman", "soapui", "rest assured", "contract testing"]),
+    "iac": _s("Infrastructure as code", "technical", ["infrastructure as code", "iac", "terraform", "cloudformation", "bicep", "ansible", "pulumi"]),
+    "monitoring": _s("Monitoring & observability", "technical", ["prometheus", "grafana", "observability", "datadog", "new relic", "cloudwatch", "system monitoring", "infrastructure monitoring", "network monitoring", "nagios", "zabbix", "prtg"]),
+    "routing_switching": _s("Routing & switching", "technical", ["routing protocols", "ospf", "bgp", "eigrp", "cisco ios", "cisco routers", "cisco switches", "routers and switches", "switches and routers", "static routing", "dynamic routing", "sd-wan", "sdwan"]),
+    "it_support": _s("IT support", "technical", ["it support", "help desk", "helpdesk", "service desk", "desktop support", "technical support", "end-user support", "end user support", "level 1 support", "l1 support"]),
+    "windows": _s("Windows administration", "technical", ["windows 10", "windows 11", "windows server", "windows os", "windows administration", "group policy"]),
+    "m365": _s("Microsoft 365 administration", "technical", ["microsoft 365", "office 365", "m365", "o365", "exchange online", "intune"]),
+    "requirements": _s("Requirements analysis", "technical", ["requirements gathering", "requirements elicitation", "requirements analysis", "business requirements", "functional requirements", "user stories", "use cases"]),
+    "process_modelling": _s("Process modelling", "technical", ["process mapping", "process modelling", "process modeling", "bpmn", "visio", "business process"]),
     # --- tools ---
     "git": _s("Git", "tool", ["git", "github", "gitlab", "version control", "bitbucket"]),
     "docker": _s("Docker", "tool", ["docker", "containers", "containerisation", "containerization"]),
@@ -76,6 +96,8 @@ SKILLS: dict[str, Skill] = {
     "siem": _s("SIEM tools", "tool", ["siem", "splunk", "qradar", "sentinel", "elk stack"]),
     "security_tools": _s("Security testing tools", "tool", ["wireshark", "nmap", "metasploit", "burp suite", "kali linux"]),
     "jira": _s("Jira", "tool", ["jira", "confluence"]),
+    "figma": _s("Figma / UI design tools", "tool", ["figma", "adobe xd", "wireframes", "wireframing"]),
+    "servicenow": _s("IT service management tools", "tool", ["servicenow", "zendesk", "freshservice", "ticketing system", "ticketing systems", "jira service management", "jira service desk"]),
     # --- soft skills ---
     "communication": _s("Communication", "soft", ["communication", "communicating", "presenting", "presentations", "public speaking", "written and verbal"]),
     "teamwork": _s("Teamwork", "soft", ["teamwork", "collaboration", "collaborated", "collaborative", "team player", "cross-functional"]),
@@ -86,6 +108,8 @@ SKILLS: dict[str, Skill] = {
     "stakeholder": _s("Stakeholder management", "soft", ["stakeholder management", "stakeholder engagement", "stakeholders", "client-facing"]),
     "adaptability": _s("Adaptability", "soft", ["adaptability", "adaptable", "fast learner", "quick learner"]),
     "attention_detail": _s("Attention to detail", "soft", ["attention to detail", "detail-oriented", "detail oriented"]),
+    "customer_service": _s("Customer service", "soft", ["customer service", "customer support", "client support", "customer-focused", "customer focused"]),
+    "report_writing": _s("Report writing", "soft", ["report writing", "technical writing", "technical reports"]),
     # --- certifications ---
     "sec_plus": _s("CompTIA Security+", "certification", ["security+", "comptia security+", "comptia security plus"]),
     "net_plus": _s("CompTIA Network+", "certification", ["network+", "comptia network+"]),
@@ -95,6 +119,12 @@ SKILLS: dict[str, Skill] = {
     "az900": _s("Azure Fundamentals (AZ-900)", "certification", ["az-900", "az900", "azure fundamentals"]),
     "pl300": _s("Power BI Data Analyst (PL-300)", "certification", ["pl-300", "pl300", "power bi data analyst"]),
     "google_da": _s("Google Data Analytics Certificate", "certification", ["google data analytics certificate", "google data analytics professional certificate"]),
+    "comptia_a": _s("CompTIA A+", "certification", ["comptia a+", "a+ certification", "a+ certified", "comptia a plus"]),
+    "itil": _s("ITIL 4 Foundation", "certification", ["itil", "itil 4", "itil v4", "itil foundation"]),
+    "ccna": _s("Cisco CCNA", "certification", ["ccna", "cisco certified network associate"]),
+    "oscp": _s("OSCP", "certification", ["oscp", "oscp+", "offensive security certified professional"]),
+    "aws_saa": _s("AWS Solutions Architect – Associate", "certification", ["aws certified solutions architect", "aws solutions architect", "solutions architect associate", "aws saa", "saa-c03"]),
+    "istqb": _s("ISTQB Foundation (CTFL)", "certification", ["istqb", "istqb foundation", "ctfl"]),
 }
 
 CATEGORY_ORDER = ["technical", "tool", "certification", "soft"]

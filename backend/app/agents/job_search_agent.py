@@ -2,7 +2,7 @@
 
 `JobSource` is the extension point. Two sources ship:
   * AdzunaSource      - live Australian postings from the Adzuna API (needs ADZUNA_APP_ID / ADZUNA_APP_KEY)
-  * SeedDatasetSource - the synthetic 45-posting dataset, used when no live source returns enough jobs
+  * SeedDatasetSource - the synthetic sample dataset (15 postings per role), used when no live source returns enough jobs
 
 Live postings are saved to the jobs table, so matching, skill gaps and application tracking
 work on them exactly as on the sample jobs.

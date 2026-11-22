@@ -128,6 +128,38 @@ CATALOG: dict[str, list[Resource]] = {
         R("tutorial", "The Scrum Guide", "Scrum.org / Scrum Inc.", "https://scrumguides.org/scrum-guide.html", 2, "free"),
         R("tutorial", "Agile Coach", "Atlassian", "https://www.atlassian.com/agile", 4, "free"),
     ],
+    # added with the extra IT roles (links checked on 2026-11-22)
+    "data_warehousing": [R("course", "Data Engineering Zoomcamp (module 3: data warehouse)", "DataTalks.Club", "https://github.com/DataTalksClub/data-engineering-zoomcamp", 10, "free")],
+    "data_modelling": [R("tutorial", "Dimensional modeling techniques", "Kimball Group", "https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/", 6, "free")],
+    "spark": [R("tutorial", "Spark quick start", "Apache Spark docs", "https://spark.apache.org/docs/latest/quick-start.html", 3, "free")],
+    "airflow": [R("tutorial", "Airflow 101: building your first workflow", "Apache Airflow docs", "https://airflow.apache.org/docs/apache-airflow/stable/tutorial/fundamentals.html", 4, "free")],
+    "deep_learning": [
+        R("course", "Intro to Deep Learning", "Kaggle Learn", "https://www.kaggle.com/learn/intro-to-deep-learning", 4, "free"),
+        R("course", "Practical Deep Learning for Coders", "fast.ai", "https://course.fast.ai/", 30, "free"),
+    ],
+    "nlp": [R("course", "LLM Course (transformers and NLP)", "Hugging Face", "https://huggingface.co/learn/llm-course", 20, "free")],
+    "responsive_design": [R("course", "Learn Responsive Design", "web.dev", "https://web.dev/learn/design", 8, "free")],
+    "accessibility": [R("course", "Learn Accessibility", "web.dev", "https://web.dev/learn/accessibility", 8, "free")],
+    "manual_testing": [R("certification", "ISTQB Foundation Level syllabus and overview", "ISTQB", "https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/", 20, "free")],
+    "test_automation": [
+        R("tutorial", "Playwright: getting started", "Playwright docs", "https://playwright.dev/docs/intro", 6, "free"),
+        R("tutorial", "Selenium documentation", "Selenium", "https://www.selenium.dev/documentation/", 8, "free"),
+    ],
+    "api_testing": [R("tutorial", "Get started in Postman", "Postman Docs", "https://learning.postman.com/docs/introduction/overview/", 4, "free")],
+    "iac": [R("tutorial", "Terraform tutorials", "HashiCorp Developer", "https://developer.hashicorp.com/terraform/tutorials", 8, "free")],
+    "monitoring": [
+        R("tutorial", "Prometheus: getting started", "Prometheus docs", "https://prometheus.io/docs/prometheus/latest/getting_started/", 3, "free"),
+        R("tutorial", "Grafana tutorials", "Grafana Labs", "https://grafana.com/tutorials/", 4, "free"),
+    ],
+    "routing_switching": [R("course", "CCNA: Introduction to Networks", "Cisco Networking Academy", "https://www.netacad.com/courses/ccna-introduction-networks", 70, "free")],
+    "it_support": [
+        R("course", "Free CompTIA A+ 220-1201 training course", "Professor Messer", "https://www.professormesser.com/free-a-plus-training/220-1201/220-1201-video/220-1201-training-course/", 15, "free"),
+        R("course", "Google IT Support Professional Certificate", "Coursera", "https://www.coursera.org/professional-certificates/google-it-support", 120, "free to audit", "provider"),
+    ],
+    "windows": [R("course", "MD-102T00: Manage and secure Microsoft 365 endpoints by using Intune", "Microsoft Learn", "https://learn.microsoft.com/en-us/training/courses/md-102t00", 40, "free", "provider")],
+    "m365": [R("tutorial", "Microsoft 365 admin center help", "Microsoft Learn", "https://learn.microsoft.com/en-us/microsoft-365/admin/", 6, "free")],
+    "requirements": [R("tutorial", "User stories with examples and a template", "Atlassian", "https://www.atlassian.com/agile/project-management/user-stories", 2, "free")],
+    "process_modelling": [R("tutorial", "BPMN: Business Process Model and Notation", "Camunda", "https://camunda.com/bpmn/", 4, "free")],
     # ---------------- tools ----------------
     "git": [
         R("lab", "Learn Git Branching (interactive)", "learngitbranching.js.org", "https://learngitbranching.js.org/", 3, "free"),
@@ -149,6 +181,8 @@ CATALOG: dict[str, list[Resource]] = {
         R("lab", "Wireshark: The Basics", "TryHackMe", "https://tryhackme.com/room/wiresharkthebasics", 1, "free tier", "provider"),
         R("lab", "Nmap room", "TryHackMe", "https://tryhackme.com/room/furthernmap", 3, "free tier"),
     ],
+    "servicenow": [R("course", "Now Learning (free ServiceNow courses)", "ServiceNow", "https://nowlearning.servicenow.com/", 8, "free")],
+    "figma": [R("tutorial", "Figma Learn help centre", "Figma", "https://help.figma.com/hc/en-us", 4, "free")],
     "jira": [R("tutorial", "Jira guides", "Atlassian", "https://www.atlassian.com/software/jira/guides", 3, "free")],
     # ---------------- certifications ----------------
     "sec_plus": [
@@ -177,10 +211,29 @@ CATALOG: dict[str, list[Resource]] = {
         R("certification", "Power BI Data Analyst Associate exam page", "Microsoft Learn", "https://learn.microsoft.com/en-us/credentials/certifications/power-bi-data-analyst-associate/", 10, "paid"),
     ],
     "google_da": [R("certification", "Google Data Analytics Professional Certificate", "Coursera", "https://www.coursera.org/professional-certificates/google-data-analytics", 180, "paid")],
+    "comptia_a": [
+        R("course", "Free CompTIA A+ 220-1201 training course", "Professor Messer", "https://www.professormesser.com/free-a-plus-training/220-1201/220-1201-video/220-1201-training-course/", 15, "free"),
+        R("certification", "CompTIA A+ exam page", "CompTIA", "https://www.comptia.org/certifications/a", 60, "paid"),
+    ],
+    "itil": [R("certification", "ITIL 4 Foundation exam page", "PeopleCert", "https://www.peoplecert.org/browse-certifications/it-governance-and-service-management/ITIL-1/itil-4-foundation-2565", 20, "paid")],
+    "ccna": [
+        R("course", "CCNA: Introduction to Networks", "Cisco Networking Academy", "https://www.netacad.com/courses/ccna-introduction-networks", 70, "free"),
+        R("certification", "CCNA exam page", "Cisco", "https://www.cisco.com/site/us/en/learn/training-certifications/certifications/enterprise/ccna/index.html", 120, "paid"),
+    ],
+    "oscp": [
+        R("lab", "Jr Penetration Tester learning path", "TryHackMe", "https://tryhackme.com/path/outline/jrpenetrationtester", 60, "free tier"),
+        R("certification", "PEN-200 and the OSCP+ exam", "OffSec", "https://www.offsec.com/courses/pen-200/", 200, "paid"),
+    ],
+    "aws_saa": [R("certification", "AWS Certified Solutions Architect – Associate exam page", "AWS", "https://aws.amazon.com/certification/certified-solutions-architect-associate/", 80, "paid")],
+    "istqb": [R("certification", "ISTQB Foundation Level (CTFL) v4.0", "ISTQB", "https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/", 30, "paid")],
 }
 
 # Soft skills are built through practice, so each gets a concrete activity plus a guide to follow.
 SOFT: dict[str, tuple[str, str, str, str]] = {
+    "customer_service": ("Answer other people's tech questions on a help forum for a month and log each fix and follow-up",
+                         "Microsoft Q&A", "https://learn.microsoft.com/en-us/answers/", "free"),
+    "report_writing": ("Write up a practice room as a short pentest report: finding, risk, evidence and fix",
+                       "TryHackMe", "https://tryhackme.com/path/outline/jrpenetrationtester", "free tier"),
     "communication": ("Present a 5-minute walkthrough of one of your projects, then refine it",
                       "Toastmasters", "https://www.toastmasters.org/", "free tier"),
     "teamwork": ("Make your first open-source contribution and note your role and outcome",

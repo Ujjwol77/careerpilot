@@ -18,14 +18,23 @@ STAR = {
 def build_questions(role: str, gap_slugs: list[str], have_slugs: list[str], n_tech: int = 4, n_beh: int = 3, seed: int | None = None) -> list[dict]:
     rng = random.Random(seed)
     tech: list[dict] = []
-    # Prioritise questions on skills the user is missing (they'll be asked about them), then strengths.
-    for slug in gap_slugs + have_slugs:
-        for q, kw in SKILL_QUESTIONS.get(slug, []):
-            if len(tech) < n_tech and q not in {t["question"] for t in tech}:
-                tech.append({"type": "technical", "skill": display(slug), "question": q, "keywords": kw})
+    profile = ROLE_PROFILES.get(role, {})
+    used = set(profile.get("core", [])) | set(profile.get("extras", []))
+    strengths = [s for s in have_slugs if s in used] or have_slugs  # strengths this role actually uses
+
+    def add_skill_questions(slugs: list[str]) -> None:
+        for slug in slugs:
+            for q, kw in SKILL_QUESTIONS.get(slug, []):
+                if len(tech) < n_tech and q not in {t["question"] for t in tech}:
+                    tech.append({"type": "technical", "skill": display(slug), "question": q, "keywords": kw})
+
+    # Order: skills the user is missing for this role (they'll be asked about them), then questions about the
+    # role itself, then the user's strengths that the role uses.
+    add_skill_questions(gap_slugs)
     for q, kw in ROLE_QUESTIONS.get(role, []):
         if len(tech) < n_tech:
-            tech.append({"type": "technical", "skill": ROLE_PROFILES.get(role, {}).get("label", role), "question": q, "keywords": kw})
+            tech.append({"type": "technical", "skill": profile.get("label", role), "question": q, "keywords": kw})
+    add_skill_questions(strengths)
     beh = [{"type": "behavioural", "skill": "STAR", "question": q, "keywords": []} for q in rng.sample(BEHAVIOURAL, n_beh)]
     return tech + beh
 

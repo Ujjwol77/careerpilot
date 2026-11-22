@@ -357,8 +357,69 @@ def test_job_search_filters(client, user):
     r = client.get(f"{API}/jobs/search", headers=headers, params={"q": "security", "level": "senior"})
     jobs = r.json()["jobs"]
     assert jobs and all(j["level"] == "senior" for j in jobs)
-    r = client.get(f"{API}/jobs/search", headers=headers, params={"min_salary": 200000})
+    r = client.get(f"{API}/jobs/search", headers=headers, params={"min_salary": 250000})
     assert r.json()["count"] == 0
+
+
+# ---------- IT fields and roles ----------
+def test_meta_groups_every_role_into_one_field(client):
+    meta = client.get(f"{API}/meta").json()
+    fields = meta["fields"]
+    assert [f["label"] for f in fields] == ["Data & AI", "Cybersecurity", "Software Engineering", "Cloud & Infrastructure", "IT Support & Business"]
+    in_fields = [r["key"] for f in fields for r in f["roles"]]
+    assert sorted(in_fields) == sorted(r["key"] for r in meta["roles"]) and len(in_fields) == len(set(in_fields)) == 12
+    assert {"data_analyst", "cybersecurity_analyst", "software_developer"} <= set(in_fields)   # the original roles keep their keys
+
+
+def test_every_role_has_sample_jobs_questions_and_courses():
+    from sqlalchemy import func, select
+    from app.data.interview_bank import ROLE_QUESTIONS
+    from app.data.learning import CATALOG, SOFT
+    from app.data.seed_jobs import ROLE_PROFILES
+    from app.db import SessionLocal
+    from app.main import seed_jobs
+    from app.models import Job
+    from app.taxonomy import SKILLS
+    count = lambda db: dict(db.execute(select(Job.role_category, func.count()).where(Job.source == "seed-dataset").group_by(Job.role_category)).all())
+    with SessionLocal() as db:
+        before = count(db)
+    seed_jobs()   # runs on every start-up: adds roles that have no sample jobs, never duplicates
+    with SessionLocal() as db:
+        assert count(db) == before == {k: 15 for k in ROLE_PROFILES}
+    for key, role in ROLE_PROFILES.items():
+        assert len(ROLE_QUESTIONS[key]) >= 2, key
+        for slug in role["core"] + role["extras"]:
+            assert slug in SKILLS and (slug in CATALOG or slug in SOFT), (key, slug)
+
+
+def test_job_search_by_field_and_role(client, user):
+    headers, _ = user
+    jobs = client.get(f"{API}/jobs/search", headers=headers, params={"field": "cloud_infra"}).json()["jobs"]
+    assert {j["role_category"] for j in jobs} == {"cloud_devops_engineer", "network_engineer"}
+    jobs = client.get(f"{API}/jobs/search", headers=headers, params={"field": "cloud_infra", "role": "network_engineer"}).json()["jobs"]
+    assert jobs and {j["role_category"] for j in jobs} == {"network_engineer"}
+    assert client.get(f"{API}/jobs/search", headers=headers, params={"field": "astrology"}).status_code == 422
+
+
+def test_interview_asks_about_the_chosen_role(client, uploaded):
+    headers, _ = uploaded
+    s = client.post(f"{API}/interview/start", headers=headers, json={"role": "network_engineer"}).json()
+    tech = [q for q in s["questions"] if q["type"] == "technical"]
+    assert s["role_label"] == "Network Engineer" and sum(q["skill"] == "Network Engineer" for q in tech) == 2
+    assert not any(q["skill"] in ("Excel", "Data visualisation") for q in tech)   # data skills the role doesn't use
+
+
+def test_new_roles_are_inferred_from_their_skills():
+    from app.agents.profile_agent import infer_roles
+    from app.taxonomy import extract_skills
+    cases = {
+        "penetration_tester": "Penetration testing with Burp Suite and Nmap on Kali Linux, OWASP Top 10, TCP/IP networking, OSCP",
+        "service_desk_analyst": "Service desk: Windows 11, Microsoft 365, Intune, ServiceNow tickets, customer service, ITIL, CompTIA A+",
+        "cloud_devops_engineer": "AWS, Terraform, Docker, Kubernetes, GitHub Actions CI/CD on Linux, Prometheus and Grafana",
+        "business_analyst": "Requirements gathering, user stories, BPMN process mapping, stakeholder management, critical thinking",
+    }
+    for role, text in cases.items():
+        assert infer_roles(set(extract_skills(text)))[0]["role"] == role, (role, infer_roles(set(extract_skills(text)))[:2])
 
 
 def test_job_match_ranks_relevant_role_first(client, uploaded):
@@ -379,6 +440,7 @@ def test_skill_gap(client, uploaded):
     assert set(body["grouped"]) == {"Technical skills", "Tools", "Soft skills", "Certifications"}
     assert all(m["priority"] in {"high", "medium", "low"} for m in body["missing"])
     assert all(m["tier"] in {"core", "common", "nice_to_have"} and m["why"] for m in body["missing"])
+    assert all(m["notes"]["priority"] and m["notes"]["tier"] for m in body["missing"])
     assert 0 <= body["overall_coverage_pct"] <= 100 and body["headline"] and body["next_step"]
     assert body["confidence"]["level"] in {"good", "low"}
 
@@ -399,6 +461,7 @@ def test_cv_optimise(client, uploaded):
     reason = body["target_reason"]
     assert reason["mode"] == "best_match" and reason["rank"] == 1 and set(reason["components"]) == {"semantic", "skill_coverage", "experience_fit"}
     assert all(r["score"] <= reason["score"] for r in reason["runners_up"])
+    assert len(reason["runners_up"]) == min(5, reason["of"] - 1)   # up to five other matches to switch to
     for pair in body["rewrites"]:
         assert pair["before"] and pair["after"] and pair["why"]
     assert client.get(f"{API}/cv/optimise", headers=headers, params={"job_id": 99999}).status_code == 404
@@ -812,6 +875,17 @@ def test_gap_demand_tier_and_unlocks():
     assert gaps["tableau"]["unlocks"] == 1                    # only skill missing for job 1
     assert gaps["tableau"]["adjacent"] == "Excel"             # same family as a skill you have
     assert r["missing"][0]["slug"] == "tableau"               # higher demand ranks first
+
+
+def test_gap_tags_explain_themselves():
+    # teamwork: 2 of 20 postings (10%) x 0.8 = 8 -> low, but it is the only gap for both, so raised to medium
+    jobs = [_job(["sql", "teamwork"]) for _ in range(2)] + [_job(["sql", "gcp", "docker"]) for _ in range(4)] + [_job(["sql"]) for _ in range(14)]
+    gaps = {m["slug"]: m for m in analyse_gaps({"sql"}, jobs, 1)["missing"]}
+    tw, gcp = gaps["teamwork"], gaps["gcp"]
+    assert tw["priority"] == "medium" and "raised to medium" in tw["notes"]["priority"] and "= 8" in tw["notes"]["priority"]
+    assert gcp["priority"] == "low" and gcp["notes"]["priority"].startswith("20% demand × 1 for a tool = 20")
+    assert "under 30% makes it nice to have" in gcp["notes"]["tier"]
+    assert all(m["notes"]["quick_win"] for m in gaps.values() if m["quick_win"])
 
 
 def test_gap_coverage_and_experience_use_demand_and_median():

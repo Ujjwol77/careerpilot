@@ -58,6 +58,42 @@ ROLE_QUESTIONS: dict[str, list[tuple[str, list[str]]]] = {
         ("How do you decide when code is ready for review?", ["tests", "readable", "scope", "description", "lint", "review"]),
         ("Describe how you would debug a bug that only happens in production.", ["logs", "reproduce", "monitor", "hypothesis", "rollback", "metrics"]),
     ],
+    "data_engineer": [
+        ("A nightly pipeline failed and the morning dashboards are empty. What do you do?", ["logs", "rerun", "idempotent", "alert", "stakeholders", "root cause"]),
+        ("How would you design a fact table for online orders?", ["grain", "fact", "dimension", "keys", "star schema", "measures"]),
+    ],
+    "data_scientist": [
+        ("How do you know a model is good enough to put in front of users?", ["baseline", "validation", "metric", "test set", "overfitting", "business"]),
+        ("Explain a model's result to a manager with no statistics background.", ["simple", "example", "uncertainty", "impact", "decision", "visual"]),
+    ],
+    "penetration_tester": [
+        ("Walk me through how you would start testing a web application you have never seen.", ["scope", "recon", "map", "authentication", "owasp", "permission"]),
+        ("How do you write a finding so the developer can fix it?", ["risk", "steps", "reproduce", "evidence", "impact", "remediation"]),
+    ],
+    "frontend_developer": [
+        ("How do you make a form accessible?", ["labels", "keyboard", "errors", "aria", "contrast", "screen reader"]),
+        ("A page feels slow on mobile. How do you find out why?", ["lighthouse", "bundle", "images", "network", "measure", "lazy"]),
+    ],
+    "qa_engineer": [
+        ("How do you decide what to automate and what to test by hand?", ["repeat", "regression", "risk", "stable", "cost", "exploratory"]),
+        ("Write a bug report for a login button that does nothing. What goes in it?", ["steps", "expected", "actual", "environment", "severity", "screenshot"]),
+    ],
+    "cloud_devops_engineer": [
+        ("Why use infrastructure as code instead of setting things up in the console?", ["repeatable", "version control", "review", "drift", "terraform", "rollback"]),
+        ("A deployment broke production. What do you do in the first 15 minutes?", ["rollback", "communicate", "monitor", "logs", "incident", "impact"]),
+    ],
+    "network_engineer": [
+        ("A user says 'the internet is down'. How do you troubleshoot it?", ["ping", "dns", "gateway", "cable", "layer", "isolate"]),
+        ("What is a VLAN and why would you use one?", ["segment", "broadcast", "security", "switch", "trunk", "traffic"]),
+    ],
+    "service_desk_analyst": [
+        ("A manager is locked out an hour before a board meeting. How do you handle it?", ["verify", "identity", "reset", "priority", "calm", "ticket"]),
+        ("How do you decide which tickets to work on first?", ["impact", "urgency", "priority", "sla", "business", "escalate"]),
+    ],
+    "business_analyst": [
+        ("Two stakeholders want opposite things from the same feature. What do you do?", ["listen", "goals", "priority", "trade-off", "data", "agree"]),
+        ("How do you write a good user story?", ["as a", "so that", "acceptance criteria", "value", "small", "testable"]),
+    ],
 }
 
 BEHAVIOURAL = [
