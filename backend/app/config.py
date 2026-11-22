@@ -10,15 +10,28 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
 
 
 def _split(value: str) -> tuple[str, ...]:
-    return tuple(v.strip() for v in value.split(",") if v.strip())
+    return tuple(v.strip().rstrip("/") for v in value.split(",") if v.strip())
+
+
+DEV_SECRET = "dev-only-secret-change-me-before-deploying-0123456789"
+
+
+def _database_url(url: str) -> str:
+    """Hosts such as Render and Supabase hand out postgres:// or postgresql:// URLs; SQLAlchemy needs the psycopg driver named."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
 
 
 @dataclass(frozen=True)
 class Settings:
     # SQLite by default so the project runs with zero setup.
     # For Supabase/PostgreSQL use e.g. postgresql+psycopg://user:pass@host:5432/postgres
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./careerpilot.db")
-    secret_key: str = os.getenv("SECRET_KEY", "dev-only-secret-change-me-before-deploying-0123456789")
+    # "production" turns off the API docs pages and refuses to start with the development secret key.
+    app_env: str = os.getenv("APP_ENV", "development").lower()
+    database_url: str = _database_url(os.getenv("DATABASE_URL", "sqlite:///./careerpilot.db"))
+    secret_key: str = os.getenv("SECRET_KEY", DEV_SECRET)
     token_minutes: int = int(os.getenv("TOKEN_MINUTES", "720"))
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "5"))
 
@@ -67,5 +80,12 @@ class Settings:
         default_factory=lambda: _split(os.getenv("CORS_ORIGINS", "http://localhost:3000"))
     )
 
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
 
 settings = Settings()
+
+if settings.is_production and (settings.secret_key == DEV_SECRET or len(settings.secret_key) < 32):
+    raise RuntimeError("APP_ENV=production needs SECRET_KEY set to a random string of at least 32 characters.")

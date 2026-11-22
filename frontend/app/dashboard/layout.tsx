@@ -19,7 +19,6 @@ const NAV = [
   { href: "/dashboard/interview", label: "Interview practice" },
   { group: "Outputs" },
   { href: "/dashboard/report", label: "Readiness report" },
-  { href: "/dashboard/ops", label: "Agent monitor" },
 ] as const;
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

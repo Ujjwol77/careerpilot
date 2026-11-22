@@ -47,7 +47,9 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="CareerPilot API", version="0.1.0", lifespan=lifespan)
+# The interactive API docs are a developer tool, so they are only served outside production.
+_docs = {} if not settings.is_production else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+app = FastAPI(title="CareerPilot API", version="1.0.0", lifespan=lifespan, **_docs)
 app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins), allow_methods=["*"], allow_headers=["*"])
 
 

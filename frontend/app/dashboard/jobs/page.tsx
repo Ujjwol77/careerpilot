@@ -42,12 +42,6 @@ function Track({ jobId }: { jobId: number }) {
   );
 }
 
-/** What each agent step in the workflow card does, shown on hover. */
-const STEP_TIPS: Record<string, string> = {
-  job_search: "Job Search agent: collects postings for your target roles from Adzuna (live ads) and the sample set, then applies your location, salary and level filters. A cached search reuses ads fetched in the last 12 hours. If fewer than 3 pass the filters, it relaxes them and searches again.",
-  job_matching: "Job Matching agent: scores every posting out of 100 from skills you have (50%), how closely your CV's meaning matches the advert (35%, using an AI embedding model) and your experience (15%). If the best score is under 35, it widens the search to every role.",
-};
-
 function Matches() {
   const [data, setData] = useState<any>(null);
   const [ranAt, setRanAt] = useState<string | null>(null);
@@ -85,14 +79,6 @@ function Matches() {
       <NeedCv error={error} />
       {data && (
         <>
-          <Card title="Agent workflow" info={<>The agents that produced these results, in the order they ran, with what each one did. Green means the step worked.
-            <span style={{ display: "block", marginTop: 6 }}>&quot;Reflected&quot; means the agent checked its own result, found it too weak and tried again with wider settings. Hover each step for details.</span></>}>
-            <div className="row">
-              {data.agent_trace.map((s: any, i: number) => (
-                <Pill key={i} tone={s.status === "ok" ? "good" : "bad"} tip={STEP_TIPS[s.agent]}>{s.agent.replaceAll("_", " ")}: {s.note}</Pill>
-              ))}
-            </div>
-          </Card>
           {data.count > 0 && (
             <div className="grid grid-2">
               <Card title="Matches by readiness" info={`Your top ${data.count} matches, grouped by match score. Hover a band for what it means.`}>
@@ -235,7 +221,7 @@ function SourceNote({ items }: { items: { source?: string }[] }) {
       Live postings: <a href="https://www.adzuna.com.au" target="_blank" rel="noopener noreferrer">Jobs by Adzuna</a>
     </p>
   ) : (
-    <p className="muted small">Showing sample postings (fictional companies). Add an Adzuna key in backend/.env for live Australian jobs.</p>
+    <p className="muted small">Showing sample postings (fictional companies) while live job listings are unavailable.</p>
   );
 }
 
@@ -244,8 +230,7 @@ function SourceBadge({ source }: { source?: string }) {
   return source === "adzuna" ? <Pill tone="good">Live · Adzuna</Pill> : <Pill tone="neutral">Sample job</Pill>;
 }
 
-/** Which method measured the "meaning" part of the score (see backend/app/semantic.py). */
+/** Which method measured the "meaning" part of the score, in plain words. */
 function engineLabel(engine?: string) {
-  if (!engine || engine === "local word overlap") return "word overlap, AI embeddings unavailable";
-  return engine.startsWith("gemini") ? "Gemini AI embeddings" : `${engine} embeddings`;
+  return !engine || engine === "local word overlap" ? "by word overlap" : "by an AI model";
 }

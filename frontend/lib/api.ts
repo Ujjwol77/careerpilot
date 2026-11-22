@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Set NEXT_PUBLIC_API_URL on the host (it is built into the pages); a trailing slash is ignored.
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 const KEY = "cp_token";
 
 // Tokens live in localStorage for this MVP. For production prefer an httpOnly cookie set by the API.

@@ -29,7 +29,7 @@ function AtsRead() {
     finally { setBusy(false); }
   }
 
-  if (!v) return null;
+  if (!v || v.status === "not_configured") return null; // hidden until the parser key is set on the server
   const who = (v.provider ?? "the parser").split(" (")[0];
   const when = v.read_at ? new Date(v.read_at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
   return (
@@ -38,13 +38,10 @@ function AtsRead() {
         Before any keyword check, an applicant tracking system parses your file into fields. Anything its parser misses, the ATS never sees.
         This check sends your original file to an independent resume parser{v.configured ? <>, {v.provider},</> : null} and compares what it read with what CareerPilot read.
       </p>
-      {v.status === "not_configured" && (
-        <p className="small">Not set up yet: add <code>APILAYER_API_KEY</code> (free) to <code>backend/.env</code> and restart the backend.</p>
-      )}
       {v.status === "not_run" && (
         <div className="cv-ats-run">
           <button type="button" className="btn" onClick={run} disabled={busy}>{busy ? "Reading your CV…" : `Check with ${who}`}</button>
-          <span className="small muted">Sends your CV file, including contact details, to {v.provider}. Uses a small amount of your API credits, once per CV.</span>
+          <span className="small muted">Sends your CV file, including contact details, to {v.provider}. Runs once per CV.</span>
         </div>
       )}
       {err && <p className="small" role="alert" style={{ color: "var(--bad)" }}>{err}</p>}
@@ -84,7 +81,7 @@ function AtsRead() {
           {v.result.missed_skills.length > 0 && (
             <p className="small">Skills CareerPilot found that the ATS parser didn't: {v.result.missed_skills.join(", ")}. Name them plainly in your Skills section.</p>
           )}
-          <p className="small muted">Read by {v.engine} on {when} for {v.filename}.{typeof v.credits_remaining === "number" ? ` ${v.credits_remaining} credits left.` : ""} Upload a new CV to check again.</p>
+          <p className="small muted">Read by {who} on {when} for {v.filename}. Upload a new CV to check again.</p>
         </>
       )}
     </Card>
@@ -209,8 +206,8 @@ export default function CvPage() {
             </table>
             <p className="small muted">
               {reason.semantic_engine && reason.semantic_engine !== "local word overlap"
-                ? `Meaning is measured by an AI embedding model (${reason.semantic_engine}), which compares what your CV and the advert are about, not just shared words.`
-                : "Meaning is measured by word overlap because the AI embedding model is unavailable; this is less accurate."}
+                ? "Meaning is measured by an AI embedding model, which compares what your CV and the advert are about, not just shared words."
+                : "Meaning is measured by word overlap for this result, which is less precise than the AI model."}
             </p>
             {reason.missing_skills.length > 0 && (
               <p className="small muted">Skills from this advert not found in your CV: {reason.missing_skills.join(", ")}.</p>

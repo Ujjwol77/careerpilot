@@ -513,8 +513,8 @@ def test_applications_crud_and_isolation(client, uploaded, stranger):
     assert client.get(f"{API}/applications", headers=headers).json() == []
 
 
-# ---------- orchestrator, report, LLMOps ----------
-def test_full_report_and_ops(client, uploaded):
+# ---------- orchestrator and report ----------
+def test_full_report(client, uploaded):
     headers, _ = uploaded
     r = client.post(f"{API}/report/generate", headers=headers, json={})
     rep = r.json()
@@ -530,13 +530,17 @@ def test_full_report_and_ops(client, uploaded):
     assert rep["readiness_band"] in {"HIGHLY_QUALIFIED", "QUALIFIED_WITH_GAPS", "DEVELOPMENT_REQUIRED"}
     assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["items"] and rep["interview"]["schedule"]
     assert client.get(f"{API}/report/latest", headers=headers).json()["generated_at"] == rep["generated_at"]
-    summary = client.get(f"{API}/ops/summary", headers=headers).json()
-    assert set(summary["services"]) == {"gemini", "embeddings", "adzuna", "mslearn", "youtube", "ats_parser"}
-    assert summary["services"]["gemini"]["set_up"] is False  # mock LLM in tests
-    assert summary["llm_provider"] == "mock" and any(a["agent"] == "report" for a in summary["agents"])
-    assert client.get(f"{API}/ops/runs", headers=headers).json()[0]["status"] == "ok"
-    ids = [p["id"] for p in client.get(f"{API}/prompts", headers=headers).json()]
-    assert "cv_rewrite.v1" in ids
+    # the deploy version has no developer endpoints
+    for path in ("/ops/summary", "/ops/runs", "/prompts"):
+        assert client.get(f"{API}{path}", headers=headers).status_code == 404
+
+
+def test_production_settings(monkeypatch):
+    from app import config
+    assert config._database_url("postgres://u:p@h:5432/db") == "postgresql+psycopg://u:p@h:5432/db"
+    assert config._database_url("postgresql://u:p@h/db") == "postgresql+psycopg://u:p@h/db"
+    assert config._database_url("sqlite:///./x.db") == "sqlite:///./x.db"
+    assert config._split("https://a.vercel.app/, http://localhost:3000") == ("https://a.vercel.app", "http://localhost:3000")
 
 
 def test_orchestrator_reflects_when_filters_too_strict(client, uploaded):

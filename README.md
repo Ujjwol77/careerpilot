@@ -26,7 +26,7 @@ The app runs with **no API keys at all**. Every external service has an offline 
 
 **Prerequisites:** Python 3.11+, Node.js 20+.
 
-### 1. Backend (http://localhost:8000, interactive API docs at http://localhost:8000/docs)
+### 1. Backend (http://localhost:8000, interactive API docs at http://localhost:8000/docs outside production)
 
 macOS / Linux:
 ```bash
@@ -48,7 +48,7 @@ copy .env.example .env
 uvicorn app.main:app --reload
 ```
 
-On first start the backend creates the database tables and loads 45 sample job postings.
+On first start the backend creates the database tables and loads 180 sample job postings (12 roles across 5 fields).
 
 ### 2. Frontend (http://localhost:3000)
 
@@ -63,9 +63,8 @@ npm run dev
 ### 3. Try it
 
 1. Open http://localhost:3000 and register an account.
-2. Upload a CV from the **Profile** page. Test CVs are in `backend/samples/` (a data-analyst CV as PDF/DOCX, plus a cybersecurity one) and `Sample CVs/` (five IT CVs from student to senior level).
+2. Upload a CV from the **Profile** page. Test CVs are in `backend/samples/` and `backend/samples/cv_set/` (19 graded CVs across the 12 roles).
 3. Work through **Jobs → Skill gaps → CV review → Learning → Interview → Report**.
-4. Open **Agent monitor** to see each agent run, its latency and whether it used the LLM or a template.
 
 ---
 
@@ -113,9 +112,9 @@ CV ─► 1 Profile ─► 2 Job Search ─► 3 Job Matching ─┬─► 4 Ski
 ```
 
 - **Match score** = 0.35 semantic similarity + 0.50 weighted skill coverage + 0.15 experience fit. Bands: 80+ *Highly qualified*, 60+ *Qualified with gaps*, otherwise *Development required*.
-- **LLM fallback:** text-producing steps call the LLM when configured. In mock mode, or if the model fails, they use rule-based templates (labelled `template` / `template-fallback` in the Agent monitor).
+- **LLM fallback:** text-producing steps call the LLM when configured. In mock mode, or if the model fails, they use rule-based templates (recorded as `template` / `template-fallback` in `agent_runs`).
 - **Privacy:** contact details are removed from CV text before it is sent to any external API.
-- **Logging:** every agent run is recorded (status, latency, engine) and shown on the Agent monitor page.
+- **Logging:** every agent run is recorded in the database (status, latency, engine). The deploy branch has no on-screen monitor; query the `agent_runs` table if needed.
 
 More detail: [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md) (Mermaid diagram) and [docs/PROMPT_BANK.md](docs/PROMPT_BANK.md) (prompts used by each agent).
 
@@ -131,7 +130,7 @@ All routes are under the `/api/v1` prefix (for example `POST /api/v1/auth/login`
 | Analysis | `GET /skill-gap`, `GET /cv/optimise`, `GET /learning`, `POST /interview/start`, `POST /interview/answer` |
 | Applications | `GET/POST /applications`, `PATCH/DELETE /applications/{id}` |
 | Report | `POST /report/generate`, `GET /report/latest` |
-| Ops | `GET /ops/runs`, `GET /ops/summary`, `GET /prompts` |
+| Reference data | `GET /meta` |
 
 See http://localhost:8000/docs for the full, current list with request and response schemas.
 
@@ -209,7 +208,7 @@ Diagnostic scripts check each external connection. Run them from `backend/`:
 | 8 | Interview coach | `interview_agent.py`, `data/interview_bank.py`, Interview page |
 | 9 | Application tracking | `routers/applications.py`, Applications page |
 | 10 | Readiness report | `report_agent.py`, Report page (print to PDF) |
-| 11 | Prompt bank, LLMOps, GitHub workflow, agent design | `prompt_bank.py`, Agent monitor page, `.github/workflows/ci.yml`, `docs/` |
+| 11 | Prompt bank, LLMOps, GitHub workflow, agent design | `prompt_bank.py`, `.github/workflows/ci.yml`, `docs/` |
 
 Agile/Scrum plans, UML diagrams and UI/UX designs are part of the written report. The workflow diagram is in `docs/AGENT_WORKFLOW.md`.
 
@@ -217,7 +216,7 @@ Agile/Scrum plans, UML diagrams and UI/UX designs are part of the written report
 
 ## Data sources and extending
 
-- **Jobs:** live postings come from Adzuna. Without a key, or if the API fails, the 45 sample postings are used. Other job APIs can be added through the `JobSource` interface in `agents/job_search_agent.py`.
+- **Jobs:** live postings come from Adzuna. Without a key, or if the API fails, the 180 sample postings are used. Other job APIs can be added through the `JobSource` interface in `agents/job_search_agent.py`.
 - **Learning:** `data/learning.py` maps each skill to specific course pages (Kaggle Learn, Microsoft Learn, TryHackMe, Cisco NetAcad, Professor Messer, PortSwigger and others). When enabled, Microsoft Learn and YouTube results are added for each skill gap, keeping one curated pick per skill.
 - **Database:** switch to PostgreSQL by changing `DATABASE_URL`. New columns are added automatically on startup; there are no separate migrations.
 
@@ -225,15 +224,17 @@ Agile/Scrum plans, UML diagrams and UI/UX designs are part of the written report
 
 ## Known limitations
 
-- Without an Adzuna key the app uses 45 synthetic postings with fictional companies. Adzuna returns only a description snippet, so skills taken from live postings can be incomplete.
+- Without an Adzuna key the app uses 180 synthetic postings with fictional companies. Adzuna returns only a description snippet, so skills taken from live postings can be incomplete.
 - The learning catalogue is hand-curated, and most study hours are estimates. Durations published by the provider are flagged `hours_source: provider`.
 - Processing is synchronous (no job queue).
 - The JWT is stored in `localStorage`. Use httpOnly cookies in production. There is no rate limiting or email verification.
 - The interview coach uses a fixed question bank plus LLM feedback, so question variety is limited.
 
-## Before deploying
+## Deploying
 
-- Set a long random `SECRET_KEY`.
+This is the **deploy branch**: the Agent monitor, the developer endpoints (`/ops/*`, `/prompts`) and the developer labels are removed, and the API docs pages are off when `APP_ENV=production`. Step-by-step hosting instructions (Render for the backend and database, Vercel for the website) are in [DEPLOY.md](DEPLOY.md).
+
+- Set a long random `SECRET_KEY` (the backend refuses to start in production without one).
 - Set `CORS_ORIGINS` to the real frontend URL, and `NEXT_PUBLIC_API_URL` to the real backend URL.
-- Use PostgreSQL instead of SQLite.
+- Use PostgreSQL instead of SQLite (`psycopg` is included; `postgres://` URLs are accepted as they are).
 - Never commit `backend/.env`. It is already in `.gitignore`.

@@ -1,0 +1,52 @@
+# Render Blueprint for the CareerPilot backend and its PostgreSQL database.
+# Render: New > Blueprint > pick this repository and the "deploy" branch. See DEPLOY.md.
+services:
+  - type: web
+    name: careerpilot-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: careerpilot-db
+          property: connectionString
+      # The Vercel address of the website, e.g. https://careerpilot.vercel.app (no trailing slash)
+      - key: CORS_ORIGINS
+        sync: false
+      # Google Gemini through its OpenAI-compatible endpoint
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai/
+      - key: LLM_MODEL
+        value: gemini-3.6-flash
+      - key: LLM_API_KEY
+        sync: false
+      - key: ADZUNA_APP_ID
+        sync: false
+      - key: ADZUNA_APP_KEY
+        sync: false
+      - key: ADZUNA_COUNTRY
+        value: au
+      - key: APILAYER_API_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+
+databases:
+  - name: careerpilot-db
+    plan: free
+    region: singapore
+    databaseName: careerpilot
+    user: careerpilot

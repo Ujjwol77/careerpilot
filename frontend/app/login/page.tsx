@@ -12,6 +12,13 @@ export default function LoginPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false); // free hosting puts the server to sleep; the first request can take a minute
+
+  useEffect(() => {
+    if (!busy) { setSlow(false); return; }
+    const t = window.setTimeout(() => setSlow(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [busy]);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("mode") === "register") setMode("register");
@@ -61,6 +68,7 @@ export default function LoginPage() {
             <button className="btn" disabled={busy} style={{ width: "100%", justifyContent: "center" }}>
               {busy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
             </button>
+            {slow && <p className="muted small" role="status" style={{ marginTop: 10 }}>Starting the server. After a quiet spell this can take up to a minute; please keep this page open.</p>}
           </form>
         </div>
         <p className="muted small">Your CV is stored only to power your own analysis. Contact details are removed before any text is sent to an external AI model.</p>

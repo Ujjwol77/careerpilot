@@ -13,7 +13,7 @@ def build_report(*, name: str, target_label: str, matches: list[dict], cv: dict,
     best = top[0] if top else None
     fallback = (
         (f"Your best current match is {best['title']} at {best['company']} ({best['score']}%). " if best else "No matching jobs were found yet. ")
-        + f"The biggest skill gap across your top matches is {top_gap}. "
+        + (f"The biggest skill gap across your top matches is {top_gap}. " if gaps["missing"] else "Your CV already covers the skills your top matches ask for. ")
         + (f"Starting with the {len(learning['items'])} recommended courses is the fastest way to raise your readiness." if learning["items"] else "Focus on polishing your CV and interview answers.")
     )
     facts = f"readiness={readiness}; best={best['title'] if best else 'n/a'}; gap={top_gap}; ats={cv['ats_score']}; courses={len(learning['items'])}"

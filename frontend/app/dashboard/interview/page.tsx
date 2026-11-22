@@ -72,7 +72,6 @@ export default function InterviewPage() {
               <strong>Score {fb.score}/10</strong> · session average {fb.average_score} ({fb.answered}/{fb.total} answered)
               <p>{fb.feedback}</p>
               <ul>{fb.tips.map((t: string, k: number) => <li key={k}>{t}</li>)}</ul>
-              <span className="small">Feedback source: {fb.feedback_source === "template" ? "rule-based scoring" : fb.feedback_source}</span>
             </div>
           )}
           {last && !fb && <p className="muted small">Last result: {last.score}/10</p>}
