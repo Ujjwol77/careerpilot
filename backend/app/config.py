@@ -48,6 +48,21 @@ class Settings:
     adzuna_results: int = int(os.getenv("ADZUNA_RESULTS", "30"))
     jobs_cache_hours: int = int(os.getenv("JOBS_CACHE_HOURS", "12"))
 
+    # Third-party resume parser for "How an ATS reads your CV" (first provider with a key is used).
+    # APILayer: free plan, 100 parses a month, no card (https://marketplace.apilayer.com/resume_parser-api).
+    apilayer_api_key: str = os.getenv("APILAYER_API_KEY", "")
+    apilayer_url: str = os.getenv("APILAYER_URL", "https://api.apilayer.com/resume_parser/upload")
+    # Eden AI is used when its key is set
+    # ($10 free credits; Affinda parser $0.07 per CV); Textkernel is the alternative.
+    edenai_api_key: str = os.getenv("EDENAI_API_KEY", "")
+    edenai_resume_model: str = os.getenv("EDENAI_RESUME_MODEL", "ocr/resume_parser/affinda")
+    edenai_base_url: str = os.getenv("EDENAI_BASE_URL", "https://api.edenai.run/v3")
+    # Textkernel Tx v10 (free trial: 500 credits, 1 credit per parse).
+    # Base URL must match your account's data centre: api.au / api.us / api.eu .textkernel.com/tx/v10
+    textkernel_account_id: str = os.getenv("TEXTKERNEL_ACCOUNT_ID", "")
+    textkernel_service_key: str = os.getenv("TEXTKERNEL_SERVICE_KEY", "")
+    textkernel_base_url: str = os.getenv("TEXTKERNEL_BASE_URL", "https://api.au.textkernel.com/tx/v10")
+
     cors_origins: tuple[str, ...] = field(
         default_factory=lambda: _split(os.getenv("CORS_ORIGINS", "http://localhost:3000"))
     )

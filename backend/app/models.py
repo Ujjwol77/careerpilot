@@ -1,7 +1,7 @@
 """Database tables. Mirrors the proposal: users, cv_documents, skills (+ jobs, applications, reports, logs)."""
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -28,6 +28,10 @@ class CVDocument(Base):
     mime_type: Mapped[str] = mapped_column(String(100), default="")
     size_bytes: Mapped[int] = mapped_column(Integer, default=0)
     text: Mapped[str] = mapped_column(Text, default="")
+    # The original file, so the user can view it again. Deferred: only loaded when the file is asked for.
+    data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
+    # Summary of how the Textkernel ATS parser read this file (app/ats_parser.py); parsed once, on request.
+    ats_read: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 

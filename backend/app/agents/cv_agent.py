@@ -13,15 +13,21 @@ import re
 from ..llm import try_llm
 from ..models import Job
 from ..taxonomy import category, display
+from ..utils import BULLET_CHARS
 from .profile_agent import split_sections
 
 ACTION_VERBS = {
     "built", "created", "designed", "developed", "implemented", "led", "managed", "analysed", "analyzed",
     "improved", "reduced", "increased", "automated", "delivered", "launched", "optimised", "optimized",
     "deployed", "resolved", "investigated", "trained", "coordinated", "migrated", "tested", "configured",
+    "wrote", "authored", "ran", "presented", "maintained", "cleaned", "triaged", "hardened", "monitored",
+    "detected", "contained", "audited", "secured", "engineered", "refactored", "integrated", "established",
+    "streamlined", "reviewed", "mentored", "organised", "organized", "planned", "produced", "supervised",
+    "introduced", "modelled", "modeled", "forecast", "forecasted", "achieved", "won", "saved", "cut",
+    "containerised", "containerized", "documented", "fixed", "set", "negotiated", "researched",
 }
 WEAK = ["responsible for", "duties included", "worked on", "helped with", "assisted with", "involved in"]
-_BULLET = re.compile(r"^\s*(?:[-•*·▪]|\d+[.)])\s+(.*\S)")
+_BULLET = re.compile(r"^\s*(?:[" + re.escape(BULLET_CHARS) + r"]|\d+[.)])\s+(.*\S)")
 SEVERITY_RANK = {"high": 0, "medium": 1, "low": 2}
 
 # Targets used by the checks (shown to the user as the benchmark for each check).

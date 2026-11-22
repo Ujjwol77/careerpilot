@@ -10,6 +10,10 @@ os.environ["ADZUNA_APP_KEY"] = ""
 os.environ["LEARNING_MSLEARN"] = "false"  # tests never call live learning APIs
 os.environ["YOUTUBE_API_KEY"] = ""
 os.environ["EMBEDDING_PROVIDER"] = "local"  # tests never call the embedding API
+os.environ["TEXTKERNEL_ACCOUNT_ID"] = ""     # tests never call Textkernel; a developer's .env key is ignored
+os.environ["TEXTKERNEL_SERVICE_KEY"] = ""
+os.environ["EDENAI_API_KEY"] = ""
+os.environ["APILAYER_API_KEY"] = ""
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

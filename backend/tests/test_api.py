@@ -116,6 +116,218 @@ def test_role_fit_detail_explains_scores(uploaded):
     assert top["score"] == expected and len(top["core_missing"]) == top["core_total"] - top["core_have"]
 
 
+def test_pdf_bullet_marks_and_action_verbs_are_recognised():
+    from app.agents.cv_agent import _bullets, optimise_cv
+    text = "Experience\n\x7f Wrote 3 reports\n\uf0b7 Presented results to 40 staff\n\u25cf Ran weekly scans\n- Triaged 60 alerts"
+    assert _bullets(text) == ["Wrote 3 reports", "Presented results to 40 staff", "Ran weekly scans", "Triaged 60 alerts"]
+    verbs = next(c for c in optimise_cv(text, set(), None)["checks"] if c["id"] == "verbs")
+    assert verbs["passed"] and verbs["found"] == "100%"
+
+
+def test_view_uploaded_cv_file_and_text(client, uploaded, stranger):
+    headers, profile = uploaded
+    assert profile["cv"]["has_file"] is True
+    original = (SAMPLES / "sample_cv.docx").read_bytes()
+    r = client.get(f"{API}/profile/cv/file", headers=headers)
+    assert r.status_code == 200 and r.content == original
+    assert r.headers["content-type"].startswith("application/vnd.openxmlformats")   # from the extension, not the browser
+    assert r.headers["x-content-type-options"] == "nosniff" and r.headers["content-disposition"].startswith("inline")
+    v = client.get(f"{API}/profile/cv", headers=headers).json()
+    assert v["kind"] == "docx" and v["has_file"] and "SQL" in v["text"]
+    assert client.get(f"{API}/profile/cv/file").status_code == 401                   # needs sign-in
+    assert client.get(f"{API}/profile/cv/file", headers=stranger).status_code == 404  # never another user's CV
+
+
+# ---------- Textkernel ATS parser (fake server) ----------
+def _tk_response(code="Success"):
+    if code != "Success":
+        return {"Info": {"Code": code, "Message": code}}
+    pos = lambda title, emp, s, e, cur=False: {"JobTitle": {"Raw": title}, "Employer": {"Name": {"Raw": emp}}, "IsCurrent": cur,
+        "StartDate": {"Date": f"{s}-01-01", "FoundYear": True, "FoundMonth": False},
+        "EndDate": {"Date": "2026-11-22", "IsCurrentDate": True} if cur else {"Date": f"{e}-01-01", "FoundYear": True, "FoundMonth": False}}
+    return {"Info": {"Code": "Success", "TransactionCost": 1, "CustomerDetails": {"CreditsRemaining": 499}},
+            "Value": {"ParsingResponse": {"Code": "Success"}, "ResumeData": {
+                "ContactInformation": {"CandidateName": {"FormattedName": "Alex Morgan"}, "EmailAddresses": ["alex.morgan@example.com"],
+                                       "Telephones": [{"Raw": "0400 000 000"}]},
+                "EmploymentHistory": {"Positions": [pos("Reporting Assistant", "Southern Retail Group", 2023, None, True),
+                                                    pos("Data Entry Clerk", "Bayside Logistics", 2021, 2023)]},
+                "Education": {"EducationDetails": [{"SchoolName": {"Raw": "Victoria University"}, "Degree": {"Name": {"Raw": "Bachelor of Information Technology"}}}]},
+                "Skills": {"Raw": [{"Name": n} for n in ["SQL", "Excel", "Power BI", "Data Visualisation", "Communication", "Teamwork", "Statistics"]]},
+                "ResumeMetadata": {"FoundSections": [{"SectionType": t, "HeaderTextFound": h} for t, h in
+                                                     [("SUMMARY", "Summary"), ("WORK HISTORY", "Experience"), ("EDUCATION", "Education"), ("SKILLS", "Skills")]]}}}}
+
+
+@pytest.fixture
+def textkernel(monkeypatch):
+    import app.ats_parser as tk
+    from app.config import settings
+    calls, reply = [], {"code": "Success"}
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json=_tk_response(reply["code"]))
+    real = tk.parse_cv
+    monkeypatch.setattr(tk, "parse_cv", lambda data, filename="cv.pdf": real(data, filename, httpx.MockTransport(handler)))
+    object.__setattr__(settings, "textkernel_account_id", "123"); object.__setattr__(settings, "textkernel_service_key", "secret")
+    yield calls, reply
+    object.__setattr__(settings, "textkernel_account_id", ""); object.__setattr__(settings, "textkernel_service_key", "")
+
+
+def test_ats_parser_not_configured(client, uploaded):
+    headers, _ = uploaded
+    assert client.get(f"{API}/profile/cv/ats-read", headers=headers).json()["status"] == "not_configured"
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "ATS_PARSER_NOT_CONFIGURED"
+
+
+def test_ats_parser_reads_cv_once_and_compares(client, uploaded, textkernel):
+    import base64, json
+    calls, _ = textkernel
+    headers, _ = uploaded
+    assert client.get(f"{API}/profile/cv/ats-read", headers=headers).json()["status"] == "not_run"
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers).json()
+    assert r["status"] == "done" and len(calls) == 1
+    sent = json.loads(calls[0].content)
+    assert calls[0].headers["Tx-AccountId"] == "123" and calls[0].url.path.endswith("/parser/resume")
+    assert base64.b64decode(sent["DocumentAsBase64String"]) == (SAMPLES / "sample_cv.docx").read_bytes()
+    items = {i["key"]: i for i in r["result"]["items"]}
+    assert items["name"]["ok"] and items["email"]["ok"] and items["jobs"]["ats"] == "2 jobs" and items["jobs"]["ok"]
+    assert r["result"]["positions"][0] == {"title": "Reporting Assistant", "employer": "Southern Retail Group", "start": "2023", "end": "Present"}
+    assert r["credits_remaining"] == 499
+    client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert len(calls) == 1                                   # cached with the CV: no second credit spent
+
+
+def test_ats_parser_unreadable_file_is_remembered_and_bad_key_is_not(client, uploaded, textkernel):
+    calls, reply = textkernel
+    headers, _ = uploaded
+    reply["code"] = "AuthenticationError"
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert r.status_code == 409 and "account ID" in r.json()["error"]["message"]
+    reply["code"] = "ConversionException"
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers).json()
+    assert r["status"] == "failed" and "couldn't read" in r["error"]["message"]
+    client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert len(calls) == 2                                   # the unreadable file is not sent again
+
+
+# ---------- Eden AI ATS parser (fake server) ----------
+_EDEN_OUTPUT = {"status": "success", "cost": 0.07, "output": {"extracted_data": {
+    "personal_infos": {"name": {"raw_name": "Alex Morgan", "first_name": "Alex", "last_name": "Morgan"},
+                       "mails": ["alex.morgan@example.com"], "phones": ["0400 000 000"]},
+    "work_experience": {"total_years_experience": "5", "entries": [
+        {"title": "Reporting Assistant", "company": "Southern Retail Group", "start_date": "2023-01-01", "end_date": None},
+        {"title": "Data Entry Clerk", "company": "Bayside Logistics", "start_date": "2021-01-01", "end_date": "2023-01-01"}]},
+    "education": {"entries": [{"title": "Bachelor of Information Technology", "establishment": "Victoria University", "end_date": "2021"}]},
+    "skills": [{"name": n, "type": "hard"} for n in ["SQL", "Excel", "Power BI", "Communication", "Teamwork"]]}}}
+
+
+@pytest.fixture
+def eden(monkeypatch):
+    import app.ats_parser as ap
+    from app.config import settings
+    calls, reply = [], {"upload": 200, "parse": 200}
+    def handler(request):
+        calls.append(request)
+        if request.url.path.endswith("/upload"):
+            return httpx.Response(reply["upload"], json={"file_id": "f-1"} if reply["upload"] == 200 else {"detail": "Unsupported file type"})
+        return httpx.Response(reply["parse"], json=_EDEN_OUTPUT if reply["parse"] == 200 else {"detail": "Invalid API key"})
+    real = ap.parse_cv
+    monkeypatch.setattr(ap, "parse_cv", lambda data, filename="cv.pdf": real(data, filename, httpx.MockTransport(handler)))
+    object.__setattr__(settings, "edenai_api_key", "eden-key")
+    yield calls, reply
+    object.__setattr__(settings, "edenai_api_key", "")
+
+
+def test_eden_parser_reads_cv_once_and_compares(client, uploaded, eden):
+    calls, _ = eden
+    headers, _ = uploaded
+    v = client.get(f"{API}/profile/cv/ats-read", headers=headers).json()
+    assert v["status"] == "not_run" and v["provider"] == "Eden AI (Affinda parser)"
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers).json()
+    upload, parse = calls
+    assert upload.headers["Authorization"] == "Bearer eden-key" and b"sample_cv.docx" in upload.content
+    assert json.loads(parse.content) == {"model": "ocr/resume_parser/affinda", "input": {"file": "f-1"}}
+    items = {i["key"]: i for i in r["result"]["items"]}
+    assert r["status"] == "done" and "sections" not in items          # Eden's shared schema has no section list
+    assert items["name"]["ok"] and items["jobs"]["ats"] == "2 jobs" and items["dates"]["ok"]
+    assert r["result"]["positions"][1] == {"title": "Data Entry Clerk", "employer": "Bayside Logistics", "start": "2021-01-01", "end": "2023-01-01"}
+    client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert len(calls) == 2                                               # cached: not uploaded again
+
+
+def test_eden_rejected_file_is_remembered_and_bad_key_is_not(client, uploaded, eden):
+    calls, reply = eden
+    headers, _ = uploaded
+    reply["parse"] = 401
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert r.status_code == 409 and "API key" in r.json()["error"]["message"]
+    reply["parse"], reply["upload"] = 200, 415
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers).json()
+    assert r["status"] == "failed" and "standard PDF" in r["error"]["message"]
+    n = len(calls)
+    client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert len(calls) == n                                               # the rejected file is not sent again
+
+
+# ---------- APILayer resume parser (fake server) ----------
+@pytest.fixture
+def apilayer(monkeypatch):
+    import app.ats_parser as ap
+    from app.config import settings
+    calls, reply = [], {"status": 200}
+    body = {"name": "Alex Morgan", "email": "alex.morgan@example.com",
+            "skills": ["Sql", "Excel", "Power bi", "Communication"],
+            "education": [{"name": "Victoria University", "dates": "2018 - 2021"}],
+            "experience": [{"title": "Reporting Assistant", "dates": "2023 - Present", "organization": "Southern Retail Group"},
+                           {"title": "Data Entry Clerk", "dates": "2021 - 2023", "organization": "Bayside Logistics"}]}
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(reply["status"], json=body if reply["status"] == 200 else {"message": "error"})
+    real = ap.parse_cv
+    monkeypatch.setattr(ap, "parse_cv", lambda data, filename="cv.pdf": real(data, filename, httpx.MockTransport(handler)))
+    object.__setattr__(settings, "apilayer_api_key", "free-key")
+    yield calls, reply
+    object.__setattr__(settings, "apilayer_api_key", "")
+
+
+def test_apilayer_parser_reads_cv_and_compares(client, uploaded, apilayer):
+    calls, _ = apilayer
+    headers, _ = uploaded
+    v = client.get(f"{API}/profile/cv/ats-read", headers=headers).json()
+    assert v["status"] == "not_run" and v["provider"] == "APILayer Resume Parser"
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers).json()
+    (req,) = calls
+    assert req.headers["apikey"] == "free-key" and req.content == (SAMPLES / "sample_cv.docx").read_bytes()   # raw file body
+    items = {i["key"]: i for i in r["result"]["items"]}
+    assert "phone" not in items and "sections" not in items     # this parser returns neither, so they aren't judged
+    assert items["jobs"]["ats"] == "2 jobs" and items["dates"]["ok"] and items["name"]["ok"]
+    assert r["result"]["positions"][0]["dates"] == "2023 - Present"
+
+
+def test_apilayer_monthly_limit_is_explained(client, uploaded, apilayer):
+    _, reply = apilayer
+    headers, _ = uploaded
+    reply["status"] = 429
+    r = client.post(f"{API}/profile/cv/ats-read", headers=headers)
+    assert r.status_code == 409 and "100 a month" in r.json()["error"]["message"]
+    assert client.get(f"{API}/profile/cv/ats-read", headers=headers).json()["status"] == "not_run"   # can retry later
+
+
+def test_apilayer_small_file_gets_a_clear_message():
+    import app.ats_parser as ap
+    from app.config import settings
+    object.__setattr__(settings, "apilayer_api_key", "free-key")
+    try:
+        with pytest.raises(ap.AtsParserError) as exc:
+            ap.parse_cv(b"%PDF-1.4 tiny", "cv.pdf",
+                        httpx.MockTransport(lambda r: httpx.Response(400, json={"message": "File too small"})))
+    finally:
+        object.__setattr__(settings, "apilayer_api_key", "")
+    assert exc.value.code == "ConversionException"
+    msg = str(exc.value)
+    assert "too small" in msg and "KB" in msg and "Word or Google Docs" in msg and msg.count("upload") == 1
+
+
 def test_docx_profile_content(uploaded):
     _, profile = uploaded
     assert profile["name"]
@@ -256,7 +468,7 @@ def test_full_report_and_ops(client, uploaded):
     assert rep["top_jobs"] and rep["cv"]["suggestions"] and rep["learning"]["items"] and rep["interview"]["schedule"]
     assert client.get(f"{API}/report/latest", headers=headers).json()["generated_at"] == rep["generated_at"]
     summary = client.get(f"{API}/ops/summary", headers=headers).json()
-    assert set(summary["services"]) == {"gemini", "embeddings", "adzuna", "mslearn", "youtube"}
+    assert set(summary["services"]) == {"gemini", "embeddings", "adzuna", "mslearn", "youtube", "ats_parser"}
     assert summary["services"]["gemini"]["set_up"] is False  # mock LLM in tests
     assert summary["llm_provider"] == "mock" and any(a["agent"] == "report" for a in summary["agents"])
     assert client.get(f"{API}/ops/runs", headers=headers).json()[0]["status"] == "ok"

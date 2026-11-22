@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from .. import ats_parser
 from ..agents.job_search_agent import job_source_mode
 from ..config import settings
 from ..data.seed_jobs import ROLE_PROFILES
@@ -35,6 +36,7 @@ def summary(user: User = Depends(get_current_user), db: Session = Depends(get_db
             "adzuna": {"set_up": job_source_mode() == "adzuna", "detail": f"country {settings.adzuna_country}"},
             "mslearn": {"set_up": settings.learning_mslearn, "detail": "no key needed"},
             "youtube": {"set_up": bool(settings.youtube_api_key), "detail": "YouTube Data API v3"},
+            "ats_parser": {"set_up": ats_parser.configured(), "detail": ats_parser.label()},
         },
         "agents": [{"agent": a, "runs": n, "avg_ms": round(avg or 0), "errors": int(err or 0)} for a, n, avg, err in rows],
     }

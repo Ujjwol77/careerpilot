@@ -22,7 +22,9 @@ def seed_jobs() -> None:
 
 def add_missing_columns() -> None:
     """create_all() never alters existing tables, so add columns introduced after a DB was created."""
-    new_cols = {"jobs": {"url": "VARCHAR(500) DEFAULT ''", "external_id": "VARCHAR(80) DEFAULT ''"}}
+    blob = "BYTEA" if engine.dialect.name == "postgresql" else "BLOB"
+    new_cols = {"jobs": {"url": "VARCHAR(500) DEFAULT ''", "external_id": "VARCHAR(80) DEFAULT ''"},
+                "cv_documents": {"data": blob, "ats_read": "JSON"}}
     insp = inspect(engine)
     with engine.begin() as conn:
         for table, cols in new_cols.items():

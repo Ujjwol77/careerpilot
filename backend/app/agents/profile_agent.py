@@ -4,6 +4,7 @@ from datetime import date
 
 from ..data.seed_jobs import ROLE_PROFILES
 from ..taxonomy import SKILLS, extract_skills
+from ..utils import BULLET_CHARS
 
 HEADINGS = {
     "summary": {"summary", "profile", "objective", "about me", "career objective", "professional summary"},
@@ -204,7 +205,7 @@ def analyse_cv(text: str) -> dict:
     education = [l.strip() for l in sections.get("education", "").splitlines() if l.strip()][:5]
     if not education:
         education = [l.strip() for l in text.splitlines() if _DEGREE.search(l)][:5]
-    experience = [l.strip(" -•*\t") for l in sections.get("experience", "").splitlines() if l.strip()][:10]
+    experience = [l.strip(" \t" + BULLET_CHARS) for l in sections.get("experience", "").splitlines() if l.strip()][:10]
     summary = sections.get("summary", "")[:500]
     years = experience_years(text, sections)
     return {
