@@ -1,4 +1,5 @@
-"""Builds the ten sample CVs in this folder, worst (01) to best (10).
+"""Builds the sample CVs in this folder: set 1 (01-10, three roles, worst to best) and set 2 (11-19, one for each
+role added later, worst to best).
 
 Run from the backend folder:  python samples/cv_set/make_cvs.py [output-folder]
 Needs python-docx (already in requirements.txt). PDFs: LibreOffice if installed, else ReportLab (pip install reportlab).
@@ -235,6 +236,216 @@ Certifications
 Microsoft Power BI Data Analyst (PL-300) | Google Data Analytics Certificate
 Skills
 SQL, Excel, Power BI, Tableau, Python, pandas, statistics, data visualisation, data cleaning, ETL, stakeholder management, communication, problem solving, attention to detail
+"""),
+# 11 ---------------------------------------------------------------- very weak: business analyst, duties and a long objective
+dict(file="cv_11_very_weak_business_analyst.docx", role="Business Analyst", tier="Very weak", text="""
+Grace Tan
+grace.tan.demo@example.com
+Objective
+To obtain a challenging position as a business analyst in a reputable organisation where I can use my skills and grow my career while contributing to the success of the company.
+Experience
+Administration Officer - Riverbend Council (fictional)  2022 - 2024
+- Responsible for taking meeting minutes
+- Assisted with updating spreadsheets
+- Was involved in a project to change the booking system
+- Duties included answering emails and filing
+Education
+Bachelor of Business  2018 - 2021
+Skills
+Excel, Microsoft Word, good communication, team player, hard working
+"""),
+
+# 12 ---------------------------------------------------------------- weak: front-end developer, paragraphs instead of bullets
+dict(file="cv_12_weak_frontend.pdf", role="Front-end Developer", tier="Weak", text="""
+Lucas Moreau
+Mobile 0400 000 201
+About me
+I am a self-taught web developer who enjoys making websites look nice. I have built a few sites for friends and I am looking for my first job in tech.
+Experience
+Freelance Web Designer, 2023 - 2025. I made websites for a cafe, a hairdresser and a local football club using HTML, CSS and JavaScript. I was responsible for the design and for keeping the sites updated. I also helped the clients with their social media and photos when they asked.
+Retail Assistant, Sportsco (fictional), 2021 - 2023. Served customers, handled the register and stocked shelves.
+Education
+Certificate IV in Web Development, 2022 - 2023
+I can use HTML, CSS, JavaScript, a bit of React, Photoshop and Git. I am creative and friendly.
+"""),
+
+# 13 ---------------------------------------------------------------- below average: network engineer, bullets without results
+dict(file="cv_13_below_average_network.docx", role="Network Engineer", tier="Below average", text="""
+Arjun Mehta
+arjun.mehta.demo@example.com | 0400 000 202 | Adelaide, SA
+Summary
+Network support technician looking to move into a network engineer role.
+Experience
+Network Support Technician - Coastline Telecom (fictional)  Mar 2023 - Present
+- Responsible for configuring switches and routers for business customers
+- Worked on firewall changes with the senior engineer
+- Helped with troubleshooting VPN problems
+- Monitored the network using PRTG
+- Updated network diagrams in Visio
+Helpdesk Officer - Unity College (fictional)  Feb 2022 - Feb 2023
+- Supported staff and students with Wi-Fi and printer issues
+- Logged tickets and followed up
+Education
+Diploma of Information Technology (Networking) - TAFE SA  2020 - 2021
+Certifications
+CompTIA Network+
+Skills
+Networking, TCP/IP, DNS, DHCP, VLAN, Cisco IOS, firewalls, VPN, Windows Server, troubleshooting, communication
+"""),
+
+# 14 ---------------------------------------------------------------- average: QA / test engineer, some numbers
+dict(file="cv_14_average_qa.pdf", role="QA / Test Engineer", tier="Average", text="""
+Mei Lin Chow
+meilin.chow.demo@example.com | 0400 000 203 | Melbourne, VIC
+Professional summary
+Software tester with 2 years of experience in manual testing and starting to automate tests. Careful, detail-oriented and comfortable working in Agile teams.
+Experience
+Software Tester - Bluestone Insurance (fictional), Melbourne  Feb 2024 - Present
+- Wrote and ran test cases for the claims portal before each fortnightly release
+- Logged defects in Jira and retested fixes with developers
+- Responsible for regression testing of 3 web applications
+- Tested REST APIs with Postman during sprint testing
+- Started automating smoke tests with Selenium for the login and payment pages
+Junior Tester - Applied Forms Co (fictional)  Mar 2023 - Jan 2024
+- Performed user acceptance testing with business users
+- Checked forms in different browsers and on mobile
+Education
+Bachelor of Computer Science - Deakin University  2019 - 2022
+Certifications
+ISTQB Foundation Level (CTFL)
+Skills
+Manual testing, test cases, regression testing, user acceptance testing, Selenium, Postman, API testing, SQL, Jira, Agile, attention to detail, communication
+"""),
+
+# 15 ---------------------------------------------------------------- fair: service desk analyst, entry level but quantified
+dict(file="cv_15_fair_service_desk.docx", role="Service Desk Analyst", tier="Fair", text="""
+Jack O'Brien
+jack.obrien.demo@example.com | 0400 000 204 | Perth, WA
+Professional summary
+IT support officer with 1.5 years of experience on a busy help desk. Known for calm customer service and clear communication with non-technical staff.
+Experience
+IT Support Officer - Goldfields Health (fictional), Perth  Jun 2024 - Present
+- Resolved around 25 tickets a day by phone, chat and in person in ServiceNow
+- Reset passwords and managed accounts in Active Directory and Microsoft 365
+- Set up Windows 11 laptops and phones for about 15 new starters a month with Intune
+- Responsible for keeping the knowledge base up to date
+- Escalated network and server issues to the infrastructure team
+Customer Service Officer - Westside Phones (fictional)  Jan 2023 - May 2024
+- Helped customers set up phones and email accounts
+- Handled complaints and returns
+Education
+Certificate IV in Information Technology - North Metropolitan TAFE  2022
+Certifications
+CompTIA A+ | ITIL 4 Foundation (in progress)
+Skills
+IT support, help desk, Windows 11, Microsoft 365, Active Directory, ServiceNow, customer service, troubleshooting, communication, time management
+"""),
+
+# 16 ---------------------------------------------------------------- good: data scientist
+dict(file="cv_16_good_data_scientist.pdf", role="Data Scientist", tier="Good", text="""
+Hannah Schmidt
+hannah.schmidt.demo@example.com | 0400 000 205 | Sydney, NSW | github.com/hannah-demo
+Professional summary
+Data scientist with 2 years of experience building machine learning models in Python and explaining the results to business teams. Strong in statistics, SQL and model evaluation.
+Experience
+Data Scientist - Harbour Insurance Group (fictional), Sydney  Mar 2024 - Present
+- Built a claim fraud model with scikit-learn that flagged 18% more fraudulent claims at the same review cost
+- Trained a text classification model on 40,000 customer emails, routing 70% of them automatically
+- Wrote SQL to prepare features from 5 source tables and checked data quality with pandas
+- Presented model results and their limits to claims managers in monthly reviews
+Graduate Data Analyst - Metro Transport (fictional)  Feb 2023 - Feb 2024
+- Analysed travel card data for 1.2 million trips a week using SQL and Python
+- Created Tableau dashboards used by 3 planning teams
+- Ran statistical tests on timetable changes, informing 2 service decisions
+Projects
+- Housing price prediction: regression and gradient boosting in Python, with a written model card on GitHub
+Education
+Master of Data Science - University of Sydney  2021 - 2022
+Bachelor of Science (Mathematics) - UNSW  2017 - 2020
+Skills
+Python, SQL, pandas, NumPy, scikit-learn, machine learning, statistics, natural language processing, data visualisation, Tableau, Git, communication, critical thinking
+"""),
+
+# 17 ---------------------------------------------------------------- very good: data engineer
+dict(file="cv_17_very_good_data_engineer.docx", role="Data Engineer", tier="Very good", text="""
+Oliver Grant
+oliver.grant.demo@example.com | 0400 000 206 | Melbourne, VIC | github.com/oliver-demo
+Professional summary
+Data Engineer with 3 years of experience building reliable data pipelines and warehouse models in SQL, Python and dbt on AWS. Cares about data quality, testing and clear documentation.
+Experience
+Data Engineer - Southern Grocers (fictional), Melbourne  Jan 2023 - Present
+- Built 25 ETL pipelines in Python and Airflow that load 40 million rows a day into Snowflake
+- Designed star schema models in dbt for sales and stock, used by 60 analysts
+- Moved nightly batch jobs to Spark on Databricks, cutting run time from 6 hours to 45 minutes
+- Added automated data quality tests that catch 95% of bad loads before reports refresh
+- Deployed pipelines with Docker and GitHub Actions, with infrastructure in Terraform
+Junior Data Engineer - Insight Media (fictional)  Feb 2022 - Dec 2022
+- Wrote SQL and Python jobs that combined 8 marketing data sources into PostgreSQL
+- Reduced failed nightly loads from 12 a month to 1 by adding retries and alerts
+Projects
+- Open data pipeline: Airflow and dbt project loading public transport data into BigQuery, documented on GitHub
+Education
+Bachelor of Computer Science - Monash University  2018 - 2021
+Certifications
+AWS Certified Cloud Practitioner
+Skills
+SQL, Python, ETL, data pipelines, data warehousing, Snowflake, BigQuery, data modelling, dbt, Apache Spark, Airflow, AWS, Docker, Terraform, PostgreSQL, Git, Linux, problem solving, teamwork, communication
+"""),
+
+# 18 ---------------------------------------------------------------- excellent: penetration tester
+dict(file="cv_18_excellent_pentest.pdf", role="Penetration Tester", tier="Excellent", text="""
+Zara Ahmed
+zara.ahmed.demo@example.com | 0400 000 207 | Canberra, ACT | linkedin.com/in/zara-demo
+Professional summary
+Penetration Tester with 3 years of experience testing web applications, internal networks and cloud services. Holds OSCP and writes clear findings reports that developers can act on.
+Experience
+Penetration Tester - Ironclad Assurance (fictional), Canberra  Feb 2023 - Present
+- Led 40 web application and network penetration tests for government and finance clients
+- Found 12 critical vulnerabilities, including 3 authentication bypasses, all fixed before release
+- Wrote findings reports with risk ratings, evidence and fixes, rated 4.8 of 5 by clients
+- Built Python scripts that automated reconnaissance, saving 6 hours on each engagement
+- Ran 5 scoped red team exercises and helped the blue team add 20 new detections
+Security Analyst - Capital Data Services (fictional)  Jan 2022 - Jan 2023
+- Ran Nessus vulnerability scans across 1,500 hosts and tracked fixes to a 90% closure rate
+- Reviewed code against the OWASP Top 10 for 15 internal applications
+Projects
+- Hack The Box: ranked in the top 2% in Australia
+- Published 2 write-ups on web application security, read by over 10,000 people
+- Volunteer mentor: ran 6 workshops on secure coding for university students, attended by 150 people
+Education
+Bachelor of Cyber Security - University of Canberra  2018 - 2021
+Certifications
+OSCP (2023) | CompTIA Security+ (2022)
+Skills
+Penetration testing, ethical hacking, Burp Suite, Nmap, Metasploit, Kali Linux, OWASP, vulnerability assessment, networking, Linux, Python, threat modelling, cryptography, report writing, communication, critical thinking
+"""),
+
+# 19 ---------------------------------------------------------------- best: cloud / devops engineer
+dict(file="cv_19_best_cloud_devops.docx", role="Cloud / DevOps Engineer", tier="Best", text="""
+Sam Wilson
+sam.wilson.demo@example.com | 0400 000 208 | Brisbane, QLD | github.com/sam-demo
+Professional summary
+Cloud / DevOps Engineer and Site Reliability Engineer with 4 years of experience automating AWS infrastructure with Terraform, running Kubernetes and building CI/CD pipelines. Focused on reliable releases, monitoring and lower cloud costs.
+Experience
+DevOps Engineer - Northern Payments (fictional), Brisbane  Jan 2023 - Present
+- Built all AWS infrastructure as code with Terraform, managing 300 resources across 3 environments
+- Moved 18 services to Docker and Kubernetes, cutting deployment time from 2 hours to 10 minutes
+- Built CI/CD pipelines in GitHub Actions that run tests and deploy 40 times a week
+- Set up Prometheus and Grafana monitoring and alerts, reducing outage time by 60%
+- Reduced the monthly AWS bill by 28% by right-sizing instances and scheduling test environments
+Cloud Engineer - Brightwave Software (fictional)  Feb 2021 - Dec 2022
+- Automated Linux server builds with Ansible and Bash for 50 virtual machines
+- Migrated 2 on-premises applications to AWS with no data loss
+- Wrote Python tools that rotate keys and report on unused resources
+Projects
+- Home lab: Kubernetes cluster on 3 Raspberry Pis, deployed with Terraform and Helm
+- Incident response playbooks: wrote 12 runbooks for on-call engineers, halving the time to restore service
+Education
+Bachelor of Information Technology (Networks and Security) - QUT  2017 - 2020
+Certifications
+AWS Certified Solutions Architect - Associate (2023) | Microsoft Azure Fundamentals (AZ-900)
+Skills
+AWS, Azure, Linux, Docker, Kubernetes, Terraform, Ansible, infrastructure as code, CI/CD, GitHub Actions, Prometheus, Grafana, Python, Bash, Git, networking, problem solving, teamwork
 """),
 ]
 

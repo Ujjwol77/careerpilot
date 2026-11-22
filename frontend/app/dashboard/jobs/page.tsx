@@ -42,6 +42,12 @@ function Track({ jobId }: { jobId: number }) {
   );
 }
 
+/** What each agent step in the workflow card does, shown on hover. */
+const STEP_TIPS: Record<string, string> = {
+  job_search: "Job Search agent: collects postings for your target roles from Adzuna (live ads) and the sample set, then applies your location, salary and level filters. A cached search reuses ads fetched in the last 12 hours. If fewer than 3 pass the filters, it relaxes them and searches again.",
+  job_matching: "Job Matching agent: scores every posting out of 100 from skills you have (50%), how closely your CV's meaning matches the advert (35%, using an AI embedding model) and your experience (15%). If the best score is under 35, it widens the search to every role.",
+};
+
 function Matches() {
   const [data, setData] = useState<any>(null);
   const [ranAt, setRanAt] = useState<string | null>(null);
@@ -79,29 +85,35 @@ function Matches() {
       <NeedCv error={error} />
       {data && (
         <>
-          <Card title="Agent workflow">
+          <Card title="Agent workflow" info={<>The agents that produced these results, in the order they ran, with what each one did. Green means the step worked.
+            <span style={{ display: "block", marginTop: 6 }}>&quot;Reflected&quot; means the agent checked its own result, found it too weak and tried again with wider settings. Hover each step for details.</span></>}>
             <div className="row">
               {data.agent_trace.map((s: any, i: number) => (
-                <Pill key={i} tone={s.status === "ok" ? "good" : "bad"}>{s.agent.replaceAll("_", " ")}: {s.note}</Pill>
+                <Pill key={i} tone={s.status === "ok" ? "good" : "bad"} tip={STEP_TIPS[s.agent]}>{s.agent.replaceAll("_", " ")}: {s.note}</Pill>
               ))}
             </div>
           </Card>
           {data.count > 0 && (
             <div className="grid grid-2">
-              <Card title="Matches by readiness">
+              <Card title="Matches by readiness" info={`Your top ${data.count} matches, grouped by match score. Hover a band for what it means.`}>
                 <Donut ariaLabel="Matches grouped by readiness band" centerLabel="matches" slices={[
-                  { label: "Highly qualified", color: "var(--good)", value: data.matches.filter((m: any) => m.readiness === "HIGHLY_QUALIFIED").length },
-                  { label: "Qualified with gaps", color: "var(--warn)", value: data.matches.filter((m: any) => m.readiness === "QUALIFIED_WITH_GAPS").length },
-                  { label: "Development required", color: "var(--bad)", value: data.matches.filter((m: any) => m.readiness === "DEVELOPMENT_REQUIRED").length },
+                  { label: "Highly qualified", color: "var(--good)", value: data.matches.filter((m: any) => m.readiness === "HIGHLY_QUALIFIED").length,
+                    note: "Match score 80 or more: your CV already shows most of what these adverts ask for. Apply now." },
+                  { label: "Qualified with gaps", color: "var(--warn)", value: data.matches.filter((m: any) => m.readiness === "QUALIFIED_WITH_GAPS").length,
+                    note: "Match score 60 to 79: a good fit with a few missing skills. Worth applying while you close the gaps." },
+                  { label: "Development required", color: "var(--bad)", value: data.matches.filter((m: any) => m.readiness === "DEVELOPMENT_REQUIRED").length,
+                    note: "Match score under 60: several core skills or the experience asked for are missing. See Skill gaps." },
                 ].filter((s) => s.value > 0)} />
               </Card>
               <div className="stack">
-                <Kpi label="Best match score" value={Math.max(...data.matches.map((m: any) => m.score))} decimals={0} suffix="/100" accent="var(--s1)" />
-                <Kpi label="Average score" value={data.matches.reduce((a: number, m: any) => a + m.score, 0) / data.count} decimals={0} suffix="/100" accent="var(--s2)" />
+                <Kpi label="Best match score" value={Math.max(...data.matches.map((m: any) => m.score))} decimals={0} suffix="/100" accent="var(--s1)"
+                  tip="The highest match score among your matches, out of 100: 50% skills you have, 35% how closely your CV's meaning matches the advert, 15% experience. It is the first job in the list below." />
+                <Kpi label="Average score" value={data.matches.reduce((a: number, m: any) => a + m.score, 0) / data.count} decimals={0} suffix="/100" accent="var(--s2)"
+                  tip={`The average match score of your top ${data.count} matches. It rises when you add skills that many of these adverts ask for; a big gap from the best score means only a few jobs fit you closely.`} />
               </div>
             </div>
           )}
-          <Card title={`${data.count} matches`}>
+          <Card title={`${data.count} matches`} info="Each ring is the job's match score out of 100. The bar under each job splits it into meaning (up to 35), skills (up to 50) and experience (up to 15); hover a part for your own numbers.">
             <Legend items={[{ label: "Meaning (35%)", color: "var(--s1)" }, { label: "Skills (50%)", color: "var(--s2)" }, { label: "Experience (15%)", color: "var(--s3)" }]} />
             {data.count === 0 && <p className="muted">No postings matched. Loosen your preferences and try again.</p>}
             {data.count > 0 && <SourceNote items={data.matches} />}

@@ -43,14 +43,16 @@ export function CountUp({ value, decimals = 0, suffix = "" }: { value: number; d
 }
 
 /* ---------- KPI tile ---------- */
-export function Kpi({ label, value, decimals = 0, suffix = "", hint, accent = "var(--s1)" }: {
-  label: string; value: number | null; decimals?: number; suffix?: string; hint?: string; accent?: string;
+/** A headline number. With `tip`, a short explanation appears on hover or keyboard focus. */
+export function Kpi({ label, value, decimals = 0, suffix = "", hint, accent = "var(--s1)", tip }: {
+  label: string; value: number | null; decimals?: number; suffix?: string; hint?: string; accent?: string; tip?: string;
 }) {
   return (
-    <div className="kpi lift" style={{ ["--accent" as string]: accent }}>
+    <div className={`kpi lift${tip ? " has-hover-tip" : ""}`} style={{ ["--accent" as string]: accent }} tabIndex={tip ? 0 : undefined}>
       <div className="kpi-value">{value === null ? "–" : <CountUp value={value} decimals={decimals} suffix={suffix} />}</div>
       <div className="kpi-label">{label}</div>
       {hint && <div className="kpi-hint">{hint}</div>}
+      {tip && <span className="pill-tip" role="tooltip"><span className="sr-only">: </span>{tip}</span>}
     </div>
   );
 }
@@ -121,7 +123,7 @@ export function StackBar({ parts, total = 100, ariaLabel }: { parts: Part[]; tot
 }
 
 /* ---------- donut ---------- */
-export type Slice = { label: string; value: number; color: string };
+export type Slice = { label: string; value: number; color: string; note?: string };
 
 export function Donut({ slices, centerValue, centerLabel, ariaLabel }: {
   slices: Slice[]; centerValue?: string; centerLabel?: string; ariaLabel: string;
@@ -151,7 +153,7 @@ export function Donut({ slices, centerValue, centerLabel, ariaLabel }: {
                 strokeDashoffset={-offset}
                 transform="rotate(-90 70 70)"
                 opacity={active !== null && active !== i ? 0.35 : 1}
-                onMouseMove={(e) => { setActive(i); show(e, <><strong>{s.label}</strong><br />{s.value} ({pct(s.value)}%)</>); }}
+                onMouseMove={(e) => { setActive(i); show(e, <div className={s.note ? "tip-wrap" : undefined}><strong>{s.label}</strong><br />{s.value} ({pct(s.value)}%){s.note && <><br /><span className="tip-sub">{s.note}</span></>}</div>); }}
               />
             );
             offset += len;
@@ -164,9 +166,12 @@ export function Donut({ slices, centerValue, centerLabel, ariaLabel }: {
       </div>
       <ul className="legend legend-col">
         {slices.map((s, i) => (
-          <li key={`${s.label}-${i}`} className={active !== null && active !== i ? "dim" : ""} onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}>
+          <li key={`${s.label}-${i}`} className={`${active !== null && active !== i ? "dim" : ""}${s.note ? " has-hover-tip" : ""}`}
+            tabIndex={s.note ? 0 : undefined} onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}
+            onFocus={() => setActive(i)} onBlur={() => setActive(null)}>
             <span className="swatch" style={{ background: s.color }} aria-hidden="true" />
             <span>{s.label}</span><strong>{s.value}</strong>
+            {s.note && <span className="pill-tip" role="tooltip"><span className="sr-only">: </span>{s.note}</span>}
           </li>
         ))}
       </ul>
