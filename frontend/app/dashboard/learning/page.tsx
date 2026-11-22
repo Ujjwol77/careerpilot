@@ -1,6 +1,6 @@
 "use client";
-import { useApi } from "@/lib/api";
-import { Card, Loading, NeedCv, PageHeader, Pill } from "@/components/ui";
+import { useSavedApi } from "@/lib/api";
+import { Card, Loading, NeedCv, PageHeader, Pill, RefreshBar } from "@/components/ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const tone = (p: string) => (p === "high" ? "bad" : p === "medium" ? "warn" : "neutral");
@@ -10,18 +10,19 @@ const TYPE: Record<string, string> = {
 };
 
 export default function LearningPage() {
-  const { data, error, loading } = useApi("/learning");
+  const { data, at, error, loading, refresh } = useSavedApi("/learning", "learning");
   if (error) return <NeedCv error={error} />;
   // one section per skill gap, in the agent's priority order
-  const groups: { skill: string; key: string; priority: string; items: any[] }[] = [];
+  const groups: { skill: string; key: string; priority: string; note?: string; items: any[] }[] = [];
   for (const it of data?.items ?? []) {
     let g = groups.find((x) => x.skill === it.skill_name);
-    if (!g) groups.push(g = { skill: it.skill_name, key: it.skill_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), priority: it.priority, items: [] });
+    if (!g) groups.push(g = { skill: it.skill_name, key: it.skill_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), priority: it.priority, note: it.priority_note, items: [] });
     g.items.push(it);
   }
   return (
     <>
       <PageHeader title="Learning path" subtitle="Courses recommended by the Learning Pathway Agent to close your skill gaps." />
+      <RefreshBar at={at} loading={loading} onRefresh={refresh} label="Refresh learning path" hint="Refresh after your skill gaps change." />
       {loading || !data ? <Loading /> : data.items.length === 0 ? (
         <Card><p className="muted">No gaps to plan for. Nice work.</p></Card>
       ) : (
@@ -38,7 +39,7 @@ export default function LearningPage() {
           {groups.map((g) => (
             <section key={g.skill} className="course-group" aria-labelledby={`gap-${g.key}`}>
               <h2 id={`gap-${g.key}`}>
-                {g.skill} <Pill tone={tone(g.priority)}>{g.priority} priority</Pill>
+                {g.skill} <Pill tone={tone(g.priority)} tip={g.note}>{g.priority} priority</Pill>
               </h2>
               <div className="course-grid">
                 {g.items.map((it: any) => (

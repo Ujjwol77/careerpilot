@@ -1,7 +1,8 @@
 "use client";
-import { Fragment, useState } from "react";
-import { useApi } from "@/lib/api";
-import { Card, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone } from "@/components/ui";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { api, ApiError, saved, useApi } from "@/lib/api";
+import { Card, Loading, NeedCv, PageHeader, Pill, RefreshBar, ScoreRing, bandLabel, bandTone } from "@/components/ui";
+import { InfoTip } from "@/components/InfoTip";
 import "./cv.css";
 
 const tone = (s: string) => (s === "high" ? "bad" : s === "medium" ? "warn" : "neutral");
@@ -14,10 +15,106 @@ const COMPONENTS = [
   { key: "experience_fit", label: "Your years of experience vs the role's level" },
 ] as const;
 
+/** How a third-party resume parser (APILayer, Eden AI or Textkernel) reads the uploaded file, compared item by item with CareerPilot. */
+function AtsRead() {
+  const view = useApi<any>("/profile/cv/ats-read");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const v = view.data;
+
+  async function run() {
+    setBusy(true); setErr(null);
+    try { view.setData(await api("/profile/cv/ats-read", { method: "POST" })); }
+    catch (e) { setErr(e instanceof ApiError ? e.message : "Could not reach the parser."); }
+    finally { setBusy(false); }
+  }
+
+  if (!v) return null;
+  const who = (v.provider ?? "the parser").split(" (")[0];
+  const when = v.read_at ? new Date(v.read_at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+  return (
+    <Card title="How an ATS reads your CV">
+      <p className="small muted">
+        Before any keyword check, an applicant tracking system parses your file into fields. Anything its parser misses, the ATS never sees.
+        This check sends your original file to an independent resume parser{v.configured ? <>, {v.provider},</> : null} and compares what it read with what CareerPilot read.
+      </p>
+      {v.status === "not_configured" && (
+        <p className="small">Not set up yet: add <code>APILAYER_API_KEY</code> (free) to <code>backend/.env</code> and restart the backend.</p>
+      )}
+      {v.status === "not_run" && (
+        <div className="cv-ats-run">
+          <button type="button" className="btn" onClick={run} disabled={busy}>{busy ? "Reading your CV…" : `Check with ${who}`}</button>
+          <span className="small muted">Sends your CV file, including contact details, to {v.provider}. Uses a small amount of your API credits, once per CV.</span>
+        </div>
+      )}
+      {err && <p className="small" role="alert" style={{ color: "var(--bad)" }}>{err}</p>}
+      {v.status === "failed" && (
+        <p className="small"><strong>{v.error.message}</strong>{/upload (it again|that version)/i.test(v.error.message) ? "" : " Save your CV as a standard PDF or DOCX (not a scan, image or unusual template) and upload it again."}</p>
+      )}
+      {v.status === "done" && (
+        <>
+          <p className="cv-ats-head">
+            <Pill tone={v.result.read_ok === v.result.total ? "good" : v.result.read_ok >= v.result.total - 2 ? "warn" : "bad"}>{v.result.read_ok} of {v.result.total} read</Pill>{" "}
+            {v.result.headline}
+          </p>
+          <table className="cv-table">
+            <caption className="sr-only">What the ATS parser found compared with CareerPilot</caption>
+            <thead><tr><th scope="col">Item</th><th scope="col">ATS parser found</th><th scope="col">CareerPilot found</th><th scope="col">Result</th></tr></thead>
+            <tbody>
+              {v.result.items.map((i: any) => (
+                <tr key={i.key}>
+                  <td>{i.label}{!i.ok && <div className="small muted">{i.why}</div>}</td>
+                  <td>{i.ats}</td>
+                  <td>{i.careerpilot}</td>
+                  <td>{i.ok ? <span className="cv-pass">Read</span> : <span className="cv-fail">Check</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {v.result.positions.length > 0 && (
+            <>
+              <h3 className="cv-ats-sub">Your work history as the ATS stored it</h3>
+              <ul className="cv-ats-jobs">
+                {v.result.positions.map((p: any, k: number) => (
+                  <li key={k}><strong>{p.title || <em>no title</em>}</strong>{p.employer ? ` · ${p.employer}` : ""} <span className="muted">{p.dates ? p.dates : `${p.start || "no start date"} – ${p.end || "no end date"}`}</span></li>
+                ))}
+              </ul>
+            </>
+          )}
+          {v.result.missed_skills.length > 0 && (
+            <p className="small">Skills CareerPilot found that the ATS parser didn't: {v.result.missed_skills.join(", ")}. Name them plainly in your Skills section.</p>
+          )}
+          <p className="small muted">Read by {v.engine} on {when} for {v.filename}.{typeof v.credits_remaining === "number" ? ` ${v.credits_remaining} credits left.` : ""} Upload a new CV to check again.</p>
+        </>
+      )}
+    </Card>
+  );
+}
+
 /** Highlights [placeholders] the user must fill in with their own facts. */
 function WithPlaceholders({ text }: { text: string }) {
   const parts = text.split(/(\[[^\]]+\])/g);
   return <>{parts.map((p, i) => (p.startsWith("[") ? <mark key={i} className="cv-fill">{p}</mark> : <Fragment key={i}>{p}</Fragment>))}</>;
+}
+
+/** Why a job ranks where it does among the user's matches, and what the readiness label means. */
+function RankNote({ reason }: { reason: any }) {
+  const w = (k: string) => `${Math.round(reason.weights[k] * 100)}%`;
+  return (
+    <>
+      Each job your matching run found gets a match score out of 100: skills the advert asks for that your CV shows ({w("skill_coverage")}),
+      how closely your CV&apos;s meaning matches the advert ({w("semantic")}) and your years of experience against the role&apos;s level ({w("experience_fit")}).
+      <span style={{ display: "block", marginTop: 6 }}>
+        Your top {reason.of} matches are ranked by that score, highest first, so 1st is your best match. The table below shows how this job&apos;s score adds up.
+        {reason.rank == null && " This job isn't in your top matches, so it was scored on its own against your CV."}
+      </span>
+      <span style={{ display: "block", marginTop: 6 }}>
+        The label comes from the score: <strong>Highly qualified</strong> is 80 or more, <strong>Qualified with gaps</strong> is 60 to 79,
+        and <strong>Development required</strong> is below 60.
+      </span>
+      <span style={{ display: "block", marginTop: 6 }}>The ranking is worked out when the review runs, from your CV and preferences; press Refresh review to update it.</span>
+    </>
+  );
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -30,19 +127,51 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+type SavedReview = { data: any; at: string };
+const REVIEWS = "cv.review"; // { [jobId or ""]: SavedReview }, dropped when a new CV is uploaded or preferences change
+
+/** The review for one job, kept for this browser tab (like Jobs & matching) until the user presses Refresh,
+ *  uploads a new CV, changes preferences or signs out. Reviews call the AI model, so they aren't re-run on every visit. */
+function useSavedReview(jobId: string | null) {
+  const [review, setReview] = useState<SavedReview | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async (id: string, force: boolean) => {
+    const all = saved.get<Record<string, SavedReview>>(REVIEWS) ?? {};
+    if (!force && all[id]) { setReview(all[id]); setError(null); return; }
+    setLoading(true); setError(null);
+    if (force) setReview(null);
+    try {
+      const fresh = { data: await api("/cv/optimise", { params: { job_id: id } }), at: new Date().toISOString() };
+      setReview(fresh);
+      saved.set(REVIEWS, { ...(saved.get<Record<string, SavedReview>>(REVIEWS) ?? {}), [id]: fresh });
+    } catch (e) {
+      setError(e instanceof ApiError ? e : new ApiError(0, "ERROR", "Something went wrong."));
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { if (jobId !== null) load(jobId, false); }, [jobId, load]);
+  return { data: review?.data ?? null, at: review?.at ?? null, error, loading, refresh: () => jobId !== null && load(jobId, true) };
+}
+
 export default function CvPage() {
   const jobs = useApi<{ jobs: { id: number; title: string; company: string }[] }>("/jobs/search");
-  const [jobId, setJobId] = useState("");
-  const { data, error, loading } = useApi("/cv/optimise", { job_id: jobId });
+  const [jobId, setJobIdState] = useState<string | null>(null); // null until the saved choice is restored
+  useEffect(() => { setJobIdState(saved.get<string>("cv.job") ?? ""); }, []);
+  const setJobId = (id: string) => { setJobIdState(id); saved.set("cv.job", id); };
+  const { data, at, error, loading, refresh } = useSavedReview(jobId);
   if (error) return <NeedCv error={error} />;
   const reason = data?.target_reason;
 
   return (
     <>
       <PageHeader title="CV review" subtitle="The CV Optimisation Agent checks how applicant tracking systems (ATS) and recruiters will read your CV. It only suggests changes you can honestly make." />
+      <RefreshBar at={at} loading={loading || jobId === null} onRefresh={refresh} label="Refresh review"
+        hint="Refresh after editing your CV elsewhere or to fetch new rewrite examples." />
       <Card>
         <label htmlFor="job">Tailor the review to a job</label>
-        <select id="job" value={jobId} onChange={(e) => setJobId(e.target.value)}>
+        <select id="job" value={jobId ?? ""} onChange={(e) => setJobId(e.target.value)}>
           <option value="">My best match</option>
           {jobs.data?.jobs.map((j) => <option key={j.id} value={j.id}>{j.title} · {j.company}</option>)}
         </select>
@@ -58,6 +187,7 @@ export default function CvPage() {
                   ? <>. It ranks {ordinal(reason.rank)} of your {reason.of} matches with <strong>{pts(reason.score)}/100</strong>.</>
                   : <>. It is outside your top {reason.of} matches and scores <strong>{pts(reason.score)}/100</strong> for your CV.</>}
               {" "}<Pill tone={bandTone(reason.readiness)}>{bandLabel(reason.readiness)}</Pill>
+              <InfoTip label="How your matches are ranked"><RankNote reason={reason} /></InfoTip>
             </p>
             <table className="cv-table">
               <caption className="sr-only">How the match score for this job is calculated</caption>
@@ -125,6 +255,8 @@ export default function CvPage() {
               {data.missing_keywords.length > 0 && <p className="muted small">Add these only if you genuinely have the skill. Otherwise they're in your Learning plan.</p>}
             </Card>
           </div>
+
+          <AtsRead />
 
           <Card title="Suggestions, biggest gain first">
             {data.suggestions.length === 0 && <p className="muted">Every check passed. Nothing to fix for this job.</p>}

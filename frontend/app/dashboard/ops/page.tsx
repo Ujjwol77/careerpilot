@@ -6,13 +6,13 @@ import { Card, ErrorBox, Loading, PageHeader, Pill, sourceLabel } from "@/compon
 
 const SERVICES: Record<string, string> = {
   gemini: "Gemini LLM", embeddings: "Gemini embeddings", adzuna: "Adzuna jobs API",
-  mslearn: "Microsoft Learn API", youtube: "YouTube API",
+  mslearn: "Microsoft Learn API", youtube: "YouTube API", ats_parser: "ATS parser API",
 };
 
 /** Which page uses which agent, how the result is produced, and which outside services it depends on. */
 const FEATURES: { page: string; agents: string; how: string; services: string[] }[] = [
   { page: "Profile and CV", agents: "Profile Understanding", how: "Rules: skill taxonomy and date parsing for years of experience", services: [] },
-  { page: "CV review", agents: "CV Optimisation, with Job Search and Job Matching to pick the target job", how: "Rules for the 12 ATS checks; the LLM writes the rewrite examples", services: ["gemini"] },
+  { page: "CV review", agents: "CV Optimisation, with Job Search and Job Matching to pick the target job; ATS parser check on request", how: "Rules for the 12 ATS checks; the LLM writes the rewrite examples; a third-party resume parser (APILayer) shows how a real ATS reads the file", services: ["gemini", "ats_parser"] },
   { page: "Jobs and matching", agents: "Job Search, Job Matching", how: "Live postings with sample jobs as fallback; score = 35% meaning (embeddings) + 50% skills + 15% experience", services: ["adzuna", "embeddings"] },
   { page: "Applications", agents: "None", how: "Tracker you update yourself", services: [] },
   { page: "Skill gaps", agents: "Skill Gap", how: "Rules: share of postings for your target role that ask for each skill, tiered core / common / nice to have, ranked by demand and how many jobs a skill would unlock", services: [] },

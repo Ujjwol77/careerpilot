@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { api, ApiError, useApi } from "@/lib/api";
+import { api, ApiError, saved, useApi, type Meta } from "@/lib/api";
 import { Card, ErrorBox, Loading, PageHeader, Pill } from "@/components/ui";
 import { InfoTip } from "@/components/InfoTip";
 
@@ -42,7 +42,8 @@ function yearsNote(d: YearsDetail, shown: number) {
 
 export default function ProfilePage() {
   const profile = useApi("/profile");
-  const meta = useApi<{ roles: { key: string; label: string }[]; levels: string[] }>("/meta");
+  const meta = useApi<Meta>("/meta");
+  const [field, setField] = useState(""); // which field's roles the picker is showing
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -68,6 +69,7 @@ export default function ProfilePage() {
     try {
       const data = await api("/profile/upload", { form, params: { overwrite } });
       profile.setData(data);
+      saved.drop("jobs.match", "cv.review", "skills", "learning"); // these results were for the old CV
       setPending(null);
       setNotice(`CV analysed: ${data.skills.length} skills found.`);
     } catch (e) {
@@ -89,9 +91,18 @@ export default function ProfilePage() {
     try {
       const data = await api("/profile/preferences", { method: "PUT", body: { ...prefs, min_salary: Number(prefs.min_salary) || 0 } });
       profile.setData(data);
+      saved.drop("jobs.match", "cv.review", "skills", "learning"); // these results were for the old preferences
       setNotice("Preferences saved.");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save."); }
   }
+
+  // open the picker on the field of the first target role, else the best-fitting role, else the first field
+  useEffect(() => {
+    if (field || !meta.data || profile.loading) return;
+    const first = prefs.target_roles[0] ?? profile.data?.inferred_roles?.[0]?.role;
+    setField(meta.data.roles.find((r) => r.key === first)?.field ?? meta.data.fields[0]?.key ?? "");
+  }, [meta.data, profile.loading, profile.data, prefs.target_roles, field]);
+  const roleLabel = (k: string) => meta.data?.roles.find((r) => r.key === k)?.label ?? k.replaceAll("_", " ");
 
   const toggleRole = (k: string) => setPrefs((p) => ({ ...p, target_roles: p.target_roles.includes(k) ? p.target_roles.filter((r) => r !== k) : [...p.target_roles, k] }));
 
@@ -133,7 +144,15 @@ export default function ProfilePage() {
       {has && (
         <>
           <Card title="What the agent understood">
-            <p className="muted small">Current file: {p.cv?.filename}</p>
+            <div className="spread" style={{ alignItems: "center" }}>
+              <p className="muted small" style={{ margin: 0 }}>Current file: {p.cv?.filename}</p>
+              {p.cv && (
+                <a className="btn btn-ghost btn-small" href="/cv" target="_blank" rel="noopener noreferrer" aria-label="View your CV (opens in a new tab)">
+                  View CV
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+                </a>
+              )}
+            </div>
             <p>{p.summary}</p>
             <div className="grid grid-3">
               <div><strong>{p.years_experience}</strong><p className="muted small">years of experience{p.years_detail && <> <InfoTip label="How years of experience were worked out">{yearsNote(p.years_detail, p.years_experience)}</InfoTip></>}</p></div>
@@ -156,13 +175,33 @@ export default function ProfilePage() {
             <form onSubmit={savePrefs}>
               <fieldset style={{ border: 0, padding: 0, margin: "0 0 12px" }}>
                 <legend style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Target roles</legend>
-                <div className="row">
-                  {meta.data?.roles.map((r) => (
-                    <label key={r.key} style={{ display: "inline-flex", gap: 6, alignItems: "center", fontWeight: 400 }}>
-                      <input type="checkbox" style={{ width: "auto" }} checked={prefs.target_roles.includes(r.key)} onChange={() => toggleRole(r.key)} /> {r.label}
-                    </label>
-                  ))}
+                <div className="role-picker">
+                  <div className="field">
+                    <label htmlFor="pfield">Field</label>
+                    <select id="pfield" value={field} onChange={(e) => setField(e.target.value)}>
+                      {meta.data?.fields.map((f) => {
+                        const n = f.roles.filter((r) => prefs.target_roles.includes(r.key)).length;
+                        return <option key={f.key} value={f.key}>{f.label}{n ? ` (${n} selected)` : ""}</option>;
+                      })}
+                    </select>
+                  </div>
+                  <div className="role-options" role="group" aria-label="Roles in this field">
+                    {meta.data?.fields.find((f) => f.key === field)?.roles.map((r) => (
+                      <label key={r.key} className="role-option">
+                        <input type="checkbox" checked={prefs.target_roles.includes(r.key)} onChange={() => toggleRole(r.key)} /> {r.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
+                <p className="small muted" style={{ margin: "8px 0 0" }}>
+                  {prefs.target_roles.length === 0
+                    ? "No target roles yet: matching uses the role that fits your CV best. You can pick roles from more than one field."
+                    : <>Selected: {prefs.target_roles.map((k) => (
+                        <button key={k} type="button" className="pill pill-brand role-chip" onClick={() => toggleRole(k)} aria-label={`Remove ${roleLabel(k)}`}>
+                          {roleLabel(k)} <span aria-hidden="true">×</span>
+                        </button>
+                      ))}</>}
+                </p>
               </fieldset>
               <div className="grid grid-3">
                 <div className="field"><label htmlFor="loc">Preferred location</label><input id="loc" value={prefs.location} placeholder="e.g. Perth, remote" onChange={(e) => setPrefs({ ...prefs, location: e.target.value })} /></div>

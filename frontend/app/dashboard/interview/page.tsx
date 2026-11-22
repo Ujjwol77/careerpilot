@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
-import { api, ApiError, useApi } from "@/lib/api";
+import { api, ApiError, useApi, type Meta } from "@/lib/api";
 import { Card, ErrorBox, NeedCv, PageHeader, Pill } from "@/components/ui";
 import { LineChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function InterviewPage() {
-  const meta = useApi<{ roles: { key: string; label: string }[] }>("/meta");
+  const meta = useApi<Meta>("/meta");
   const past = useApi<any[]>("/interview/sessions");
   const [role, setRole] = useState("");
   const [session, setSession] = useState<any>(null);
@@ -48,7 +48,9 @@ export default function InterviewPage() {
           <div className="field"><label htmlFor="r">Role</label>
             <select id="r" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="">My best-matching role</option>
-              {meta.data?.roles.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+              {meta.data?.fields.map((f) => (
+                <optgroup key={f.key} label={f.label}>{f.roles.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}</optgroup>
+              ))}
             </select></div>
           <button className="btn" onClick={start} disabled={busy}>{busy ? "Preparing…" : "Start interview"}</button>
         </Card>
@@ -88,7 +90,7 @@ export default function InterviewPage() {
           <table>
             <thead><tr><th>Date</th><th>Role</th><th>Answered</th><th>Average</th></tr></thead>
             <tbody>{past.data.map((s) => (
-              <tr key={s.id}><td>{new Date(s.created_at).toLocaleDateString()}</td><td>{s.role.replaceAll("_", " ")}</td><td>{s.answered}/{s.total}</td><td>{s.average_score ?? "-"}</td></tr>
+              <tr key={s.id}><td>{new Date(s.created_at).toLocaleDateString()}</td><td>{meta.data?.roles.find((r) => r.key === s.role)?.label ?? s.role.replaceAll("_", " ")}</td><td>{s.answered}/{s.total}</td><td>{s.average_score ?? "-"}</td></tr>
             ))}</tbody>
           </table>
         ) : <p className="muted">No sessions yet.</p>}

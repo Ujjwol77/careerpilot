@@ -40,6 +40,13 @@
 .cv-before .cv-doc { color: var(--muted); }
 .cv-fill { background: var(--warn-bg); color: var(--ink); border-radius: 3px; padding: 0 3px; font-style: italic; }
 
+/* How an ATS reads your CV (Textkernel) */
+.cv-ats-run { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.cv-ats-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cv-ats-sub { font-size: 14px; margin: 14px 0 6px; }
+.cv-ats-jobs { margin: 0 0 10px; padding-left: 18px; font-size: 14px; }
+.cv-ats-jobs li { margin: 3px 0; }
+
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 760px) {

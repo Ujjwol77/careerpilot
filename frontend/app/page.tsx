@@ -35,9 +35,9 @@ const AGENTS = [
   ["Profile Understanding", "Reads your CV and lists your skills, experience and education."],
   ["Job Search", "Pulls current Australian postings from Adzuna for the roles you want."],
   ["Job Matching", "Scores every posting out of 100 and shows you why."],
-  ["Skill Gap", "Shows which skills your best-matching jobs ask for that your CV doesn't show yet."],
-  ["CV Optimisation", "Checks how applicant tracking systems read your CV and suggests honest rewrites."],
-  ["Learning Pathway", "Turns your gaps into a week-by-week plan with real courses and videos."],
+  ["Skill Gap", "Shows which skills postings for your target role ask for that your CV doesn't show yet, and why each one matters."],
+  ["CV Optimisation", "Scores your CV on 12 ATS checks, tests it with a real resume parser and suggests honest rewrites."],
+  ["Learning Pathway", "Turns your gaps into real courses, grouped by skill, with hours, cost and who each one suits."],
   ["Interview Coach", "Asks questions for your target role and scores your answers."],
 ] as const;
 
@@ -67,8 +67,8 @@ export default function Landing() {
           <div className="lp-hero-copy">
             <h1 id="lp-title">Plot your course from CV to job offer.</h1>
             <p className="lp-lede">
-              Upload your CV and seven AI agents read your skills, match you to live Australian jobs,
-              show what you're missing, plan what to study and coach you for the interview.
+              Upload your CV and seven AI agents read your skills, match you to live Australian jobs across
+              12 IT roles, show what you're missing, plan what to study and coach you for the interview.
             </p>
             <div className="lp-ctas">
               {signedIn
@@ -76,7 +76,7 @@ export default function Landing() {
                 : <><Link className="btn lp-btn-big" href="/login?mode=register">Create a free account</Link>
                     <Link className="btn btn-ghost lp-btn-big" href="/login">Log in</Link></>}
             </div>
-            <p className="lp-note">Free for job seekers. Your contact details are removed before anything is sent to an AI model.</p>
+            <p className="lp-note">Free for job seekers. Your contact details are removed before anything is sent to an AI model, and the resume parser check only runs when you ask.</p>
           </div>
 
           <figure className="lp-route" aria-label="The CareerPilot route: your CV, skills read, jobs matched, gaps found, study plan, interview practice, job offer">
@@ -129,11 +129,11 @@ export default function Landing() {
             </div>
             <div>
               <h3>Real courses</h3>
-              <p>Microsoft Learn modules, full YouTube courses and a hand-checked list of free providers. Every link opens a real course page.</p>
+              <p>A hand-checked catalogue of courses for every skill, plus Microsoft Learn modules and full YouTube courses when connected. Every link opens a real course page.</p>
             </div>
             <div>
               <h3>Scores that show their working</h3>
-              <p>A match score is 50% skills you have, 35% how closely your CV reads like the advert and 15% experience. AI writes your feedback; it never sets your score.</p>
+              <p>A match score is 50% skills you have, 35% how closely your CV reads like the advert and 15% experience. Every score and tag explains itself on hover. AI writes your feedback; it never sets your score.</p>
             </div>
           </div>
         </section>
@@ -148,7 +148,7 @@ export default function Landing() {
       </main>
 
       <footer className="lp-foot">
-        <p>CareerPilot is a NIT 3004 IT capstone student project by Agrata Shrestha and Ujjwol Adhikari from Victora University.</p>
+        <p>CareerPilot is a NIT 3004 IT capstone student project by Agrata Shrestha and Ujjwol Adhikari from Victoria University.</p>
         <p>Job listings by <a href="https://www.adzuna.com.au" target="_blank" rel="noopener noreferrer">Adzuna</a>.</p>
       </footer>
     </div>

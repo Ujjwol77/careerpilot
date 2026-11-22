@@ -24,8 +24,15 @@ export function Card({ title, info, children, className = "" }: { title?: string
   );
 }
 
-export function Pill({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "good" | "warn" | "bad" | "brand" }) {
-  return <span className={`pill pill-${tone}`}>{children}</span>;
+/** A tag. With `tip`, a one-line reason appears on hover or keyboard focus. */
+export function Pill({ children, tone = "neutral", tip }: { children: ReactNode; tone?: "neutral" | "good" | "warn" | "bad" | "brand"; tip?: string }) {
+  if (!tip) return <span className={`pill pill-${tone}`}>{children}</span>;
+  return (
+    <span className={`pill pill-${tone} pill-has-tip`} tabIndex={0}>
+      {children}
+      <span className="pill-tip" role="tooltip"><span className="sr-only">: </span>{tip}</span>
+    </span>
+  );
 }
 
 export const bandTone = (band: string) => (band === "HIGHLY_QUALIFIED" ? "good" : band === "QUALIFIED_WITH_GAPS" ? "warn" : "bad");
@@ -51,6 +58,20 @@ export function Bar({ value, tone = "brand" }: { value: number; tone?: "brand" |
   return (
     <div className="bar" aria-hidden="true">
       <div className={`bar-fill bar-${tone}`} style={{ width: `${Math.max(2, Math.min(100, value))}%` }} />
+    </div>
+  );
+}
+
+/** "Refresh" button and the time the kept result was made. Sits on the page background, not in a card. */
+export function RefreshBar({ at, loading, onRefresh, label = "Refresh", hint }: { at: string | null; loading: boolean; onRefresh: () => void; label?: string; hint?: string }) {
+  return (
+    <div className="row no-print refresh-bar">
+      <button type="button" className="btn btn-ghost btn-small" onClick={onRefresh} disabled={loading}>{loading ? "Running…" : label}</button>
+      <span className="small muted">
+        {at && !loading
+          ? `Results from ${new Date(at).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}.${hint ? ` ${hint}` : ""}`
+          : "Results are kept while you move between pages."}
+      </span>
     </div>
   );
 }
@@ -81,4 +102,4 @@ export const money = (n: number) => `$${Math.round(n / 1000)}k`;
 
 /** Human label for an agent run's llm_source (see backend/app/tracking.py). */
 export const sourceLabel = (src?: string) =>
-  ({ rules: "Rules (calculation)", llm: "LLM", template: "Template (no LLM set)", "template-fallback": "Template (LLM failed)", embeddings: "Embedding API", adzuna: "Adzuna API (live)", "adzuna+sample": "Adzuna + sample jobs", "sample-data": "Sample jobs (fallback)" } as Record<string, string>)[src ?? ""] ?? (src || "-");
+  ({ rules: "Rules (calculation)", llm: "LLM", template: "Template (no LLM set)", "template-fallback": "Template (LLM failed)", embeddings: "Embedding API", textkernel: "Textkernel API", edenai: "Eden AI API", apilayer: "APILayer API", adzuna: "Adzuna API (live)", "adzuna+sample": "Adzuna + sample jobs", "sample-data": "Sample jobs (fallback)" } as Record<string, string>)[src ?? ""] ?? (src || "-");

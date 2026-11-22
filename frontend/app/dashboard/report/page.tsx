@@ -45,11 +45,9 @@ export default function ReportPage() {
         subtitle="Runs all seven agents in sequence and combines their output."
         actions={r && <button className="btn btn-ghost" onClick={() => window.print()}>Print / save as PDF</button>}
       />
-      <Card className="no-print">
-        <div className="row">
-          <button className="btn" onClick={generate} disabled={busy}>{busy ? "Running agents…" : r ? "Regenerate report" : "Generate report"}</button>
-        </div>
-      </Card>
+      <div className="row no-print" style={{ marginBottom: 16 }}>
+        <button className="btn" onClick={generate} disabled={busy}>{busy ? "Running agents…" : r ? "Regenerate report" : "Generate report"}</button>
+      </div>
       <NeedCv error={error} />
       {r && (
         <>

@@ -1,0 +1,16 @@
+/* CV viewer (app/cv/page.tsx): opens in its own tab from Profile and CV. */
+.cvv { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+.cvv-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--line); }
+.cvv-brand { display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; text-decoration: none; }
+.cvv-brand img { border-radius: 8px; display: block; }
+.cvv-file { display: flex; flex-direction: column; min-width: 0; flex: 1 1 220px; }
+.cvv-file strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvv-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.cvv-main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 16px 40px; }
+.cvv-note { max-width: 800px; width: 100%; margin: 0 0 12px; }
+.cvv-pdf { width: 100%; max-width: 1000px; flex: 1; min-height: 75vh; border: 1px solid var(--line); border-radius: 8px; background: #ffffff; }
+/* Word files: the extracted text on a white page, like the printed document */
+.cvv-paper { width: 100%; max-width: 800px; box-sizing: border-box; background: #ffffff; color: #172033; padding: 56px 64px; border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(8, 18, 32, .12), 0 8px 24px rgba(8, 18, 32, .08); white-space: pre-wrap; overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif; font-size: 16px; line-height: 1.6; }
+@media (max-width: 640px) { .cvv-paper { padding: 28px 20px; font-size: 15px; } .cvv-bar { padding: 10px 14px; } }

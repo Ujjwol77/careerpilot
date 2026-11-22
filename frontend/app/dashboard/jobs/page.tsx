@@ -1,12 +1,14 @@
 "use client";
-import { useState } from "react";
-import { api, ApiError, useApi } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { api, ApiError, saved, useApi, type Meta } from "@/lib/api";
 import { Card, ErrorBox, Loading, NeedCv, PageHeader, Pill, ScoreRing, bandLabel, bandTone, money } from "@/components/ui";
 import { Donut, Kpi, Legend, StackBar } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function JobsPage() {
-  const [tab, setTab] = useState<"matches" | "search">("matches");
+  const [tab, setTabState] = useState<"matches" | "search">("matches");
+  useEffect(() => { if (saved.get("jobs.tab") === "search") setTabState("search"); }, []);
+  const setTab = (t: "matches" | "search") => { setTabState(t); saved.set("jobs.tab", t); };
   return (
     <>
       <PageHeader title="Jobs and matching" subtitle="The Job Search and Job Matching agents work together to rank postings for you." />
@@ -42,12 +44,24 @@ function Track({ jobId }: { jobId: number }) {
 
 function Matches() {
   const [data, setData] = useState<any>(null);
+  const [ranAt, setRanAt] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // show the last results again after switching tabs or pages (kept until sign-out or a new CV/preferences)
+  useEffect(() => {
+    const last = saved.get<{ data: any; at: string }>("jobs.match");
+    if (last) { setData(last.data); setRanAt(last.at); }
+  }, []);
+
   async function run() {
     setBusy(true); setError(null);
-    try { setData(await api("/jobs/match", { method: "POST" })); }
+    try {
+      const result = await api("/jobs/match", { method: "POST" });
+      const at = new Date().toISOString();
+      setData(result); setRanAt(at);
+      saved.set("jobs.match", { data: result, at });
+    }
     catch (e) { setError(e instanceof ApiError ? e : null); }
     finally { setBusy(false); }
   }
@@ -56,7 +70,11 @@ function Matches() {
     <>
       <div className="row no-print" style={{ marginBottom: 14 }}>
         <button className="btn" onClick={run} disabled={busy}>{busy ? "Matching…" : data ? "Re-run matching" : "Find my matches"}</button>
-        <span className="muted small">Uses your profile and preferences.</span>
+        <span className="muted small">
+          {data && ranAt
+            ? `Results from ${new Date(ranAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}. Re-run after changing your CV or preferences, or to fetch new postings.`
+            : "Uses your profile and preferences."}
+        </span>
       </div>
       <NeedCv error={error} />
       {data && (
@@ -116,10 +134,17 @@ function Matches() {
 }
 
 function Search() {
-  const meta = useApi<{ roles: { key: string; label: string }[] }>("/meta");
-  const [f, setF] = useState({ q: "", role: "", location: "", min_salary: "", level: "" });
-  const [applied, setApplied] = useState(f);
-  const { data, error, loading } = useApi<{ count: number; jobs: any[] }>("/jobs/search", applied);
+  const meta = useApi<Meta>("/meta");
+  const blank = { q: "", field: "", role: "", location: "", min_salary: "", level: "" };
+  const [f, setF] = useState(blank);
+  const [applied, setAppliedState] = useState<typeof blank | null>(null); // null until the saved filters are restored
+  useEffect(() => {
+    const last = saved.get<typeof blank>("jobs.search");
+    if (last) setF({ ...blank, ...last });
+    setAppliedState(last ? { ...blank, ...last } : blank);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const setApplied = (v: typeof blank) => { setAppliedState(v); saved.set("jobs.search", v); };
+  const { data, error, loading } = useApi<{ count: number; jobs: any[] }>(applied ? "/jobs/search" : null, applied ?? undefined);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
@@ -128,8 +153,24 @@ function Search() {
         <form onSubmit={(e) => { e.preventDefault(); setApplied(f); }}>
           <div className="grid grid-3">
             <div className="field"><label htmlFor="q">Keywords</label><input id="q" value={f.q} onChange={set("q")} placeholder="SQL, security, React…" /></div>
+            <div className="field"><label htmlFor="field">Field</label>
+              <select id="field" value={f.field} onChange={(e) => {
+                const field = e.target.value; // keep the role only if it belongs to the new field
+                const keep = !field || meta.data?.roles.some((r) => r.key === f.role && r.field === field);
+                setF({ ...f, field, role: keep ? f.role : "" });
+              }}>
+                <option value="">Any</option>{meta.data?.fields.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+              </select></div>
             <div className="field"><label htmlFor="role">Role</label>
-              <select id="role" value={f.role} onChange={set("role")}><option value="">Any</option>{meta.data?.roles.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}</select></div>
+              <select id="role" value={f.role} onChange={(e) => {
+                const role = e.target.value;
+                setF({ ...f, role, field: meta.data?.roles.find((r) => r.key === role)?.field ?? f.field });
+              }}>
+                <option value="">{f.field ? "Any role in this field" : "Any"}</option>
+                {meta.data?.fields.filter((x) => !f.field || x.key === f.field).map((x) => (
+                  <optgroup key={x.key} label={x.label}>{x.roles.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}</optgroup>
+                ))}
+              </select></div>
             <div className="field"><label htmlFor="loc">Location</label><input id="loc" value={f.location} onChange={set("location")} placeholder="Perth" /></div>
             <div className="field"><label htmlFor="min">Min salary</label><input id="min" type="number" min={0} step={5000} value={f.min_salary} onChange={set("min_salary")} /></div>
             <div className="field"><label htmlFor="lvl">Level</label>

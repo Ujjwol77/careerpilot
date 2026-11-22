@@ -46,6 +46,19 @@ a { color: var(--brand); }
 .nav .group { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .6; padding: 14px 12px 6px; }
 .userbox { margin-top: 18px; padding: 12px; border-top: 1px solid var(--nav-line); font-size: 13px; }
 .main { padding: 28px 32px 60px; max-width: 1100px; width: 100%; }
+.refresh-bar { gap: 10px; margin: -8px 0 16px; }
+.pill-has-tip { position: relative; cursor: help; }
+.pill-has-tip:hover, .pill-has-tip:focus-visible { filter: none; z-index: 30; } /* above the demand bars that follow */
+.pill-has-tip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.pill-tip { position: absolute; top: calc(100% + 7px); left: 0; z-index: 25; width: max-content; max-width: min(270px, 80vw); padding: 8px 11px; border-radius: 9px; background: var(--ink); color: var(--card); font-size: 12.5px; font-weight: 400; line-height: 1.45; white-space: normal; text-transform: none; box-shadow: 0 8px 24px rgba(8, 18, 32, .22); opacity: 0; visibility: hidden; transform: translateY(-3px); transition: opacity .12s ease, transform .12s ease, visibility 0s linear .12s; pointer-events: none; }
+.pill-has-tip:hover .pill-tip, .pill-has-tip:focus-visible .pill-tip { opacity: 1; visibility: visible; transform: none; transition: opacity .12s ease, transform .12s ease; }
+.role-picker { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 6px 18px; align-items: end; }
+.role-picker .field { margin: 0; }
+.role-options { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-bottom: 9px; }
+.role-option { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; margin: 0; }
+.role-option input { width: auto; }
+.role-chip { border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; margin: 0 6px 0 0; }
+@media (max-width: 640px) { .role-picker { grid-template-columns: 1fr; } }
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 
 /* building blocks */

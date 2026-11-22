@@ -1,6 +1,6 @@
 "use client";
-import { useApi } from "@/lib/api";
-import { Card, Loading, NeedCv, PageHeader, Pill } from "@/components/ui";
+import { useSavedApi } from "@/lib/api";
+import { Card, Loading, NeedCv, PageHeader, Pill, RefreshBar } from "@/components/ui";
 import { InfoTip } from "@/components/InfoTip";
 import { HBarChart, Kpi, Legend, Radar } from "@/components/charts";
 
@@ -9,14 +9,15 @@ const color = (p: string) => (p === "high" ? "var(--bad)" : p === "medium" ? "va
 const TIER: Record<string, string> = { core: "Core for this role", common: "Common", nice_to_have: "Nice to have" };
 
 export default function SkillsPage() {
-  const { data, error, loading } = useApi("/skill-gap");
-  if (loading) return <Loading text="The Skill Gap Agent is comparing you with the role…" />;
+  const { data, at, error, loading, refresh } = useSavedApi("/skill-gap", "skills");
   if (error) return <NeedCv error={error} />;
+  if (loading || !data) return <Loading text="The Skill Gap Agent is comparing you with the role…" />;
   const d = data;
 
   return (
     <>
       <PageHeader title="Skill gaps" subtitle={`Compared with ${d.jobs_analysed} ${d.role} postings. Demand is the share of those postings asking for a skill.`} />
+      <RefreshBar at={at} loading={loading} onRefresh={refresh} label="Refresh skill gaps" hint="Refresh after running job matching again." />
 
       <Card>
         <div className="row">
@@ -65,9 +66,9 @@ export default function SkillsPage() {
                   <div className="spread">
                     <div>
                       <strong>{s.skill}</strong>{" "}
-                      <Pill tone={s.priority === "high" ? "bad" : s.priority === "medium" ? "warn" : "neutral"}>{s.priority} priority</Pill>{" "}
-                      <Pill>{TIER[s.tier]}</Pill>
-                      {s.quick_win && <Pill tone="good">quick win</Pill>}
+                      <Pill tone={s.priority === "high" ? "bad" : s.priority === "medium" ? "warn" : "neutral"} tip={s.notes?.priority}>{s.priority} priority</Pill>{" "}
+                      <Pill tip={s.notes?.tier}>{TIER[s.tier]}</Pill>
+                      {s.quick_win && <Pill tone="good" tip={s.notes?.quick_win}>quick win</Pill>}
                       <InfoTip label={`Why ${s.skill} is a gap`}>{s.why}</InfoTip>
                     </div>
                   </div>
